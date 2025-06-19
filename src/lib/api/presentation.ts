@@ -19,3 +19,22 @@ export async function getPresentation(
     }
   );
 }
+
+export async function createPresentation(data: {
+  name: string;
+  description?: string;
+  tags: string[];
+  file: File;
+}) {
+  const formData = new FormData();
+  formData.append("name", data.name);
+  formData.append("description", data.description || "");
+  data.tags.forEach((tag) => formData.append("tags", tag));
+  formData.append("file", data.file);
+
+  return await request<any>("/v1/presentations/add-presentation", {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
+}
