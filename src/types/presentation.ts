@@ -10,3 +10,10 @@ export type Presentation = {
   tags: string[];
   trainings: Training[];
 };
+
+export type FindingBar = {
+  type: "Pre flight" | "Altitude" | "Flight path" | "Cockpit";
+  importance: number;
+  confidence: number;
+  severity: number;
+};

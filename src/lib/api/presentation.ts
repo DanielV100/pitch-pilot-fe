@@ -1,5 +1,5 @@
 import { request } from "@/lib/api/core";
-import { Presentation } from "@/types/presentation";
+import { FindingBar, Presentation } from "@/types/presentation";
 
 export async function getPresentationsWithTrainings(): Promise<Presentation[]> {
   return await request<Presentation[]>("/v1/presentations/get-presentations", {
@@ -37,4 +37,14 @@ export async function createPresentation(data: {
     body: formData,
     credentials: "include",
   });
+}
+
+export async function getFindingBars(presentationId: string) {
+  return await request<FindingBar[]>(
+    `/v1/presentations/${presentationId}/get-finding-bars`,
+    {
+      credentials: "include",
+      cache: "no-store",
+    }
+  );
 }

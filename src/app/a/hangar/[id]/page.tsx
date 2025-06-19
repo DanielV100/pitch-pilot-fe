@@ -31,11 +31,9 @@ import {
 } from "recharts"
 import { useEffect, useState } from "react"
 import { StatCard } from "@/components/ui/stats-card"
-import { Separator } from "@/components/ui/separator"
 import { TrendingUp, BarChart3, FileText, Notebook, Plus } from "lucide-react"
 import { getPresentation } from "@/lib/api/presentation"
 import { useParams } from "next/navigation"
-import { PdfPreviewCard } from "@/components/ui/pdf-preview-card"
 import { HangarFindingsSection } from "@/components/hangar/hangar-finding-section"
 import { FancySeparator } from "@/components/ui/fancy-separator"
 import { Presentation, Training } from "@/types/presentation"
@@ -81,46 +79,6 @@ export default function HangarPage() {
 
     const lineConfig = {
         score: { label: "Score", color: "var(--chart-1)" },
-    } as const
-
-    // Findings Mock
-    const findings = presentation.findings?.items || []
-
-    const grouped = findings.reduce((acc: any, f: any) => {
-        const key = f.type
-        const bucket = f.importance + f.confidence
-
-        if (!acc[key]) acc[key] = { low: 0, mid: 0, high: 0 }
-
-        if (bucket >= 18 && bucket < 19) acc[key].low++
-        else if (bucket >= 19 && bucket < 20) acc[key].mid++
-        else if (bucket >= 20) acc[key].high++
-
-        return acc
-    }, {})
-
-    const chartData = Object.entries(grouped).map(([type, values]: any) => ({
-        type,
-        low: values.low,
-        mid: values.mid,
-        high: values.high,
-    }))
-
-    const topBarKeys = Object.fromEntries(
-        chartData.map((entry) => {
-            if (entry.high > 0) return [entry.type, "high"]
-            if (entry.mid > 0) return [entry.type, "mid"]
-            if (entry.low > 0) return [entry.type, "low"]
-            return [entry.type, null]
-        })
-    )
-
-    const barKeys = ["low", "mid", "high"] as const
-
-    const chartConfig = {
-        low: { label: "Low", color: "var(--chart-1)" },
-        mid: { label: "Medium", color: "var(--chart-2)" },
-        high: { label: "High", color: "var(--chart-3)" },
     } as const
 
     return (
@@ -227,7 +185,6 @@ export default function HangarPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {presentation.trainings.map((training: Training, index) => (
                         <TrainingCard key={index} onBoard={() => console.log('test')} training={training} />
-
                     ))}
                 </div>
             </section>
