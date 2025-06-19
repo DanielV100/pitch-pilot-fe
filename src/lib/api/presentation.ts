@@ -1,5 +1,6 @@
 import { request } from "@/lib/api/core";
 import { FindingBar, Presentation } from "@/types/presentation";
+import { FindingEntry } from "@/types/presentation";
 
 export async function getPresentationsWithTrainings(): Promise<Presentation[]> {
   return await request<Presentation[]>("/v1/presentations/get-presentations", {
@@ -42,6 +43,18 @@ export async function createPresentation(data: {
 export async function getFindingBars(presentationId: string) {
   return await request<FindingBar[]>(
     `/v1/presentations/${presentationId}/get-finding-bars`,
+    {
+      credentials: "include",
+      cache: "no-store",
+    }
+  );
+}
+
+export async function getActiveFinding(
+  presentationId: string
+): Promise<FindingEntry> {
+  return await request<FindingEntry>(
+    `/v1/presentations/${presentationId}/get-active-finding`,
     {
       credentials: "include",
       cache: "no-store",

@@ -31,7 +31,7 @@ import {
 } from "recharts"
 import { useEffect, useState } from "react"
 import { StatCard } from "@/components/ui/stats-card"
-import { TrendingUp, BarChart3, FileText, Notebook, Plus } from "lucide-react"
+import { BarChart3, FileText, Notebook, Plus, Eye } from "lucide-react"
 import { getPresentation } from "@/lib/api/presentation"
 import { useParams } from "next/navigation"
 import { HangarFindingsSection } from "@/components/hangar/hangar-finding-section"
@@ -63,8 +63,11 @@ export default function HangarPage() {
     ).toFixed(1)
 
     const radarData = [
+        //@ts-ignore
         { aspect: "Content", score: presentation.analytics?.content_score ?? 0 },
+        //@ts-ignore
         { aspect: "Delivery", score: presentation.analytics?.delivery_score ?? 0 },
+        //@ts-ignore
         { aspect: "Eye Contact", score: presentation.analytics?.engagement_score ?? 0 },
     ]
 
@@ -176,6 +179,13 @@ export default function HangarPage() {
             </section>
             <section>
                 <FancySeparator label="Slide Intelligence Module" icon={<FileText className="w-4 h-4" />} />
+                <div className="flex justify-end w-full">
+                    <Button>
+                        <Eye />
+                        Inspect Deck
+                    </Button>
+
+                </div>
                 <HangarFindingsSection />
             </section>
             <section>

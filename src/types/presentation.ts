@@ -17,3 +17,27 @@ export type FindingBar = {
   confidence: number;
   severity: number;
 };
+
+export interface FindingEntry {
+  id: string;
+  total_score: number;
+  cockpit_score: number;
+  flight_path_score: number;
+  altitude_score: number;
+  preflight_check_score: number;
+  is_active: boolean;
+  findings: {
+    slides: Array<{
+      page: number;
+      findings: Array<{
+        type: number;
+        importance: number;
+        confidence: number;
+        severity: number;
+        text_excerpt: string;
+        suggestion: string;
+        explanation: string;
+      }>;
+    }>;
+  };
+}
