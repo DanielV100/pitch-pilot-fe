@@ -89,7 +89,7 @@ export default function DashboardPage() {
                             tags={p.tags}
                             trainings={p.trainings}
                             onBoard={() => {
-                                window.location.href = `/presentations/${p.id}`
+                                window.location.href = `/a/hangar/${p.id}`
                             }}
                         />
                     ))}

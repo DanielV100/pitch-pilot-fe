@@ -26,6 +26,7 @@
     "pdfjs-dist": "^5.3.31",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "recharts": "^2.15.3",
     "swr": "^2.3.3",
     "tailwind-merge": "^3.3.1",
     "zustand": "^5.0.5"

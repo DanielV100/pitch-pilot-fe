@@ -1,4 +1,5 @@
 export type Training = {
+  id: string;
   date: string;
   total_score: number;
 };
