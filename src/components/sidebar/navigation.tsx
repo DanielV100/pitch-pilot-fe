@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "../ui/button"
 import { useRouter } from "next/navigation"
-import { useActiveIdStore } from "@/hooks/useActiveIdStore"
+import { useActiveIdStore } from "@/hooks/sidebar/useActiveIdStore"
 import { SidebarMenuItemType } from "./app-sidebar"
 import Link from "next/link"
 

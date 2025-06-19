@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation"
 import { NavUser } from "./nav-user"
 import { useEffect, useState } from "react"
 import { PitchPilotLogoIcon } from "../icons/PitchPilotLogoIcon"
+import { CurrentUser } from "@/types/user"
 
 
-export function SiteHeader() {
+export function SiteHeader({ user }: { user: CurrentUser }) {
   const router = useRouter()
 
   return (
@@ -15,7 +16,7 @@ export function SiteHeader() {
       <div className="flex h-(--header-height) w-full items-center gap-2 px-4">
         <PitchPilotLogoIcon className="text-pitch-pilot-purple w-20 h-20" />
         <div className="sm:ml-auto sm:w-auto flex items-center gap-2 min-w-48">
-          <NavUser user={{ isVerified: true, hashed_password: "tets", id: "hdgsa", email: "tets.de", username: "Daniel" }} />
+          <NavUser user={user} />
         </div>
       </div>
     </header>

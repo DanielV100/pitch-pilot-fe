@@ -29,8 +29,9 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { CurrentUser } from "@/types/user"
 
-export function NavUser({ user }: { user: any }) {
+export function NavUser({ user }: { user: CurrentUser }) {
   const { isMobile } = useSidebar()
 
   return (
