@@ -43,7 +43,7 @@ export default function DashboardPage() {
 
     return (
         <main className="p-6">
-            <h1 className="text-2xl font-bold mb-4">🛬 Welcome aboard, Captain {user?.username}!</h1>
+            <h1 className="text-4xl font-bold mb-4">🛬 Welcome aboard, Captain {user?.username}!</h1>
             <p className="text-sm text-muted-foreground mb-8">
                 Your last missions are ready for take-off.
             </p>

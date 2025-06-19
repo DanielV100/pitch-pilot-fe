@@ -17,7 +17,7 @@ export function LoginForm({ className }: { className?: string }) {
     e.preventDefault()
     try {
       await login(identifier, password)
-      router.replace("/dashboard")
+      router.replace("/a/cockpit")
     } catch (err) {
       setError("Invalid credentials — please try again.")
     }

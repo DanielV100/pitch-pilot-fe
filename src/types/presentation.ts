@@ -1,9 +1,3 @@
-export type Training = {
-  id: string;
-  date: string;
-  total_score: number;
-};
-
 export type Presentation = {
   id: string;
   name: string;
@@ -40,4 +34,28 @@ export interface FindingEntry {
       }>;
     }>;
   };
+}
+
+export type VisibilityMode = "solo" | "private";
+
+export type DifficultyLevel = "easy" | "medium" | "hard";
+
+export interface TrainingCreatePayload {
+  presentation_id: string;
+  duration_seconds: number;
+  visibility_mode: VisibilityMode;
+  difficulty: DifficultyLevel;
+  eye_calibration: Record<string, unknown> | null;
+  date?: string | null;
+}
+
+export interface Training {
+  id: string;
+  presentation_id?: string;
+  duration_seconds?: number;
+  visibility_mode?: VisibilityMode;
+  difficulty?: DifficultyLevel;
+  eye_calibration?: Record<string, unknown> | null;
+  total_score: number;
+  date: string;
 }

@@ -33,15 +33,17 @@ import { useEffect, useState } from "react"
 import { StatCard } from "@/components/ui/stats-card"
 import { BarChart3, FileText, Notebook, Plus, Eye } from "lucide-react"
 import { getPresentation } from "@/lib/api/presentation"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { HangarFindingsSection } from "@/components/hangar/hangar-finding-section"
 import { FancySeparator } from "@/components/ui/fancy-separator"
 import { Presentation, Training } from "@/types/presentation"
 import { TrainingCard } from "@/components/hangar/training-card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { TrainingSetupDialog } from "@/components/hangar/training-setup-stepper"
 
 export default function HangarPage() {
+    const router = useRouter()
     const { id } = useParams()
     const [presentation, setPresentation] = useState<Presentation>()
 
@@ -86,6 +88,7 @@ export default function HangarPage() {
 
     return (
         <main className="p-6 space-y-12">
+
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-lg text-muted-foreground">Flight Deck → Hangar</h1>
@@ -98,10 +101,9 @@ export default function HangarPage() {
                         ))}
                     </div>
                 </div>
-                <Button>
-                    <Plus />
-                    Start Training
-                </Button>
+                <div className="flex items-center justify-between">
+                    <TrainingSetupDialog presentationId={id as string} />
+                </div>
             </div>
 
             <section>
@@ -180,7 +182,7 @@ export default function HangarPage() {
             <section>
                 <FancySeparator label="Slide Intelligence Module" icon={<FileText className="w-4 h-4" />} />
                 <div className="flex justify-end w-full">
-                    <Button>
+                    <Button onClick={() => router.push(`/a/hangar/${id}/inspection`)}>
                         <Eye />
                         Inspect Deck
                     </Button>
