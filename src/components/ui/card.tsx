@@ -81,6 +81,25 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+function TicketDivider() {
+  return (
+    <div className="relative h-5 w-full bg-card z-0">
+
+      <div className="absolute top-1/2 left-0 w-full border-t-2 border-dashed tracking-widest border-gray-300 -translate-y-1/2 z-10" />
+
+
+      <div className="absolute -left-[1px] top-1/2 -translate-y-1/2 w-16 h-16 overflow-hidden z-20">
+        <div className="w-8 h-8 rounded-full bg-white absolute -left-4 top-4 border border-grey" />
+      </div>
+
+
+      <div className="absolute -right-[1px] top-1/2 -translate-y-1/2 w-16 h-16 overflow-hidden z-20">
+        <div className="w-8 h-8 rounded-full bg-white absolute -right-4 top-4 border border-grey" />
+      </div>
+    </div>
+  )
+}
+
 export {
   Card,
   CardHeader,
@@ -89,4 +108,5 @@ export {
   CardAction,
   CardDescription,
   CardContent,
+  TicketDivider
 }
