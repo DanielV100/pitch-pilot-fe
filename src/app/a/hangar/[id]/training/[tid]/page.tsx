@@ -50,7 +50,7 @@ function RemoteVideo({ stream }: { stream: MediaStream }) {
 }
 
 export default function TrainingPage() {
-    const { id: room } = useParams<{ id: string }>()
+    const { tid: room } = useParams<{ tid: string }>()
 
     const [numPages, setNumPages] = React.useState(0)
     const [page, setPage] = React.useState(1)
@@ -138,9 +138,8 @@ export default function TrainingPage() {
     /* finish → compose → presign */
     async function finalizeRecording() {
         setIsRec(false)
-        const { object } = await finishRecording(room, prefix.current!)
-        const { signedUrl } = await presignRecording(object)
-        setPlayUrl(signedUrl)
+        const { object, url } = await finishRecording(room, prefix.current!)
+        console.log("Recording finished:", object, url)
     }
 
     function toggleRec() {

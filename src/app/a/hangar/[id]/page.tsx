@@ -46,6 +46,7 @@ export default function HangarPage() {
     const router = useRouter()
     const { id } = useParams()
     const [presentation, setPresentation] = useState<Presentation>()
+    const [tId, setTId] = useState<string | null>("")
 
     useEffect(() => {
         const load = async () => {
@@ -102,7 +103,7 @@ export default function HangarPage() {
                     </div>
                 </div>
                 <div className="flex items-center justify-between">
-                    <TrainingSetupDialog presentationId={id as string} />
+                    <TrainingSetupDialog tId={tId!} setTid={setTId} presentationId={id as string} />
                 </div>
             </div>
 

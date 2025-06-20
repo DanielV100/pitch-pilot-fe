@@ -34,7 +34,9 @@ import { VisibilityMode, DifficultyLevel } from "@/types/presentation"
 
 
 type Props = {
-    presentationId: string
+    presentationId: string,
+    tId: string,
+    setTid: (id: string) => void
 }
 
 /* ──────────────────────────────
@@ -51,16 +53,15 @@ const { Stepper } = defineStepper(
 /* ──────────────────────────────
    2.  Main component
    ──────────────────────────────*/
-export function TrainingSetupDialog({ presentationId }: Props) {
-    /* Local state */
+export function TrainingSetupDialog({ presentationId, tId, setTid }: Props) {
     const [open, setOpen] = React.useState(false)
-    const [duration, setDuration] = React.useState(600)          // seconds, default 10 min
+    const [duration, setDuration] = React.useState(600)
     const [visibility, setVis] = React.useState<VisibilityMode>("solo")
     const [difficulty, setDiff] = React.useState<DifficultyLevel>("easy")
     const [calib, setCalib] = React.useState<Record<string, unknown> | null>(null)
     const [loading, setLoading] = React.useState(false)
     const [error, setError] = React.useState<string | null>(null)
-    const [resultId, setResultId] = React.useState<string | null>(null)
+
 
     /* Submit to API */
     const submit = async (goTo: (id: any) => void) => {
@@ -74,7 +75,7 @@ export function TrainingSetupDialog({ presentationId }: Props) {
                 difficulty,
                 eye_calibration: calib,
             })
-            setResultId(r.id)
+            setTid(r.id)
             goTo("done")
         } catch (e) {
             console.error(e)
@@ -232,9 +233,9 @@ export function TrainingSetupDialog({ presentationId }: Props) {
                                             </li>
                                         </ul>
 
-                                        {resultId && (
+                                        {tId && (
                                             <p className="text-green-600 text-sm">
-                                                Training created successfully — ID {resultId}
+                                                Training created successfully — ID {tId}
                                             </p>
                                         )}
                                     </Stepper.Panel>
