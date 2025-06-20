@@ -3,7 +3,6 @@
 import * as React from "react"
 import { useParams } from "next/navigation"
 import { Document, Page, pdfjs } from "react-pdf"
-import pkg from "pdfjs-dist/package.json"
 import {
     ChevronLeft,
     ChevronRight,
@@ -18,12 +17,15 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { newPeer, wireSignalling } from "@/lib/websocket/webrtc"
+import { FilesetResolver, FaceLandmarker } from "@mediapipe/tasks-vision"
 
 import {
     startRecording,
     finishRecording,
     presignRecording,
 } from "@/lib/api/recordings"
+import { useFaceTracking } from "@/hooks/useFaceTracking"
+
 
 pdfjs.GlobalWorkerOptions.workerSrc =
     `//unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`
@@ -50,44 +52,57 @@ function RemoteVideo({ stream }: { stream: MediaStream }) {
 }
 
 export default function TrainingPage() {
-    const { tid: room } = useParams<{ tid: string }>()
-
+    const { tid: tid } = useParams<{ tid: string }>()
+    const [localStream, setLocalStream] = React.useState<MediaStream>()
+    const previewRef = React.useRef<HTMLVideoElement>(null as unknown as HTMLVideoElement)
     const [numPages, setNumPages] = React.useState(0)
     const [page, setPage] = React.useState(1)
     const [secs, setSecs] = React.useState(0)
+    const blendshapes = useFaceTracking(previewRef, tid);
+    const timer = new Date(secs * 1_000).toISOString().substring(14, 19)
+    const [isVideoReady, setIsVideoReady] = React.useState(false)
+
     React.useEffect(() => {
         const t = setInterval(() => setSecs((s) => s + 1), 1_000)
         return () => clearInterval(t)
     }, [])
-    const timer = new Date(secs * 1_000).toISOString().substring(14, 19)
 
-    const [localStream, setLocalStream] = React.useState<MediaStream>()
-    const previewRef = React.useRef<HTMLVideoElement>(null)
     React.useEffect(() => {
         navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((s) => {
             setLocalStream(s)
             if (previewRef.current) {
                 previewRef.current.srcObject = s
+                previewRef.current.onloadeddata = () => setIsVideoReady(true)
+                previewRef.current.oncanplay = () => setIsVideoReady(true)
                 previewRef.current.play().catch(() => { })
             }
         })
     }, [])
 
+
+
+    React.useEffect(() => {
+        if (blendshapes) {
+            console.log("Blendshapes from hook:", blendshapes);
+            const jawOpen = blendshapes.find(shape => shape.categoryName === 'jawOpen')?.score || 0;
+        }
+    }, [blendshapes]);
+
     const [streams, setStreams] = React.useState<MediaStream[]>([])
     React.useEffect(() => {
-        if (!room) return
+        if (!tid) return
         const ws = new WebSocket(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/v1/signaling/ws`)
         const pc = newPeer()
-        wireSignalling(pc, ws, room, false)
+        wireSignalling(pc, ws, tid, false)
         pc.ontrack = (ev) =>
             setStreams((cur) =>
                 cur.find((s) => s.id === ev.streams[0].id) ? cur : [...cur, ev.streams[0]],
             )
-        ws.onopen = () => ws.send(JSON.stringify({ type: "join", room }))
+        ws.onopen = () => ws.send(JSON.stringify({ type: "join", tid }))
         return () => {
             pc.close(); ws.close()
         }
-    }, [room])
+    }, [tid])
 
     const [isRec, setIsRec] = React.useState(false)
     const [playUrl, setPlayUrl] = React.useState<string | null>(null)
@@ -99,7 +114,7 @@ export default function TrainingPage() {
 
     async function startRec() {
         if (!localStream) return
-        const { prefix: pre, urls } = await startRecording(room)
+        const { prefix: pre, urls } = await startRecording(tid)
         prefix.current = pre
         putUrls.current = urls
         partIdx.current = 0
@@ -138,7 +153,7 @@ export default function TrainingPage() {
     /* finish → compose → presign */
     async function finalizeRecording() {
         setIsRec(false)
-        const { object, url } = await finishRecording(room, prefix.current!)
+        const { object, url } = await finishRecording(tid, prefix.current!)
         console.log("Recording finished:", object, url)
     }
 
@@ -157,15 +172,21 @@ export default function TrainingPage() {
 
     return (
         <div className="relative h-full w-full flex">
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-48 h-36 z-20">
+                <video
+                    ref={previewRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full rounded-md bg-black object-cover"
+                />
 
-            <video
-                ref={previewRef}
-                autoPlay
-                playsInline
-                muted
-                className="absolute top-2 left-1/2 -translate-x-1/2 w-48 h-36 rounded-md bg-black object-cover shadow-lg z-20"
-            />
-
+                {!isVideoReady && (
+                    <div className="absolute inset-0 bg-muted/80 flex items-center justify-center rounded-md z-10">
+                        <div className="animate-spin h-6 w-6 border-4 border-t-transparent border-gray-400 rounded-full" />
+                    </div>
+                )}
+            </div>
             <div className="flex-1 flex flex-col gap-4 overflow-hidden px-4 py-4">
                 <div className="flex items-start justify-between pt-40">
                     <Badge variant="outline" className="bg-yellow-50 text-yellow-900 border-yellow-300">

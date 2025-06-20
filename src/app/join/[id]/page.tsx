@@ -17,7 +17,7 @@ export default function JoinPage() {
     React.useEffect(() => {
         if (!room || !connected) return
 
-        const ws = new WebSocket("ws://localhost:8000/api/v1/signaling/ws")
+        const ws = new WebSocket(`${process.env.NEXT_PUBLIC_API_URL}/v1/ws/signaling/join`)
         const pc = newPeer()
         wireSignalling(pc, ws, room, true)
 
