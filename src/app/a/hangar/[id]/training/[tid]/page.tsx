@@ -91,7 +91,7 @@ export default function TrainingPage() {
     const [streams, setStreams] = React.useState<MediaStream[]>([])
     React.useEffect(() => {
         if (!tid) return
-        const ws = new WebSocket(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/v1/signaling/ws`)
+        const ws = new WebSocket(`${process.env.NEXT_PUBLIC_API_URL}/v1/ws/signaling/join`)
         const pc = newPeer()
         wireSignalling(pc, ws, tid, false)
         pc.ontrack = (ev) =>
