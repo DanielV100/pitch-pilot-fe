@@ -2,8 +2,10 @@
 
 import * as React from "react"
 import { useParams } from "next/navigation"
+import { motion } from "framer-motion"
 
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { newPeer, wireSignalling } from "@/lib/websocket/webrtc"
 
 export default function JoinPage() {
@@ -17,14 +19,12 @@ export default function JoinPage() {
 
         const ws = new WebSocket("ws://localhost:8000/api/v1/signaling/ws")
         const pc = newPeer()
-        wireSignalling(pc, ws, room, /* isOfferer */ true)
+        wireSignalling(pc, ws, room, true)
 
-        navigator.mediaDevices
-            .getUserMedia({ video: true, audio: true })
-            .then((stream) => {
-                if (localVideo.current) localVideo.current.srcObject = stream
-                stream.getTracks().forEach((t) => pc.addTrack(t, stream))
-            })
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
+            if (localVideo.current) localVideo.current.srcObject = stream
+            stream.getTracks().forEach((t) => pc.addTrack(t, stream))
+        })
 
         pc.onnegotiationneeded = async () => {
             const offer = await pc.createOffer()
@@ -46,16 +46,50 @@ export default function JoinPage() {
 
     if (!connected)
         return (
-            <main className="h-screen w-screen flex flex-col items-center justify-center gap-6">
-                <h1 className="text-xl font-bold">Join training&nbsp;{room}</h1>
-                <Button onClick={() => setConnected(true)}>Enable Cam &amp; Join</Button>
+            <main className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4 }}
+                >
+                    <Card className="w-full max-w-lg rounded-2xl shadow-xl border-none">
+                        <CardHeader>
+                            <CardTitle className="text-2xl md:text-3xl font-bold tracking-tight">
+                                Join Training Room
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <p className="text-muted-foreground">
+                                You’re about to join room:
+                                <span className="ml-2 font-mono text-foreground">{room}</span>
+                            </p>
+                            <Button size="lg" className="w-full" onClick={() => setConnected(true)}>
+                                Enable Camera & Join
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </motion.div>
             </main>
         )
 
     return (
-        <div className="grid grid-cols-2 h-screen">
-            <video ref={localVideo} autoPlay playsInline muted className="w-full h-full object-cover" />
-            <video ref={remoteVideo} autoPlay playsInline className="w-full h-full object-cover" />
+        <div className="h-screen w-screen grid md:grid-cols-2 bg-black relative">
+            <video
+                ref={localVideo}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover opacity-80"
+            />
+            <video
+                ref={remoteVideo}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover"
+            />
+            <div className="absolute top-4 left-4 bg-background/80 text-sm px-4 py-2 rounded-xl shadow-md border text-muted-foreground">
+                Room: <span className="text-foreground font-mono">{room}</span>
+            </div>
         </div>
     )
 }

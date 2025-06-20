@@ -76,7 +76,7 @@ export default function TrainingPage() {
     const [streams, setStreams] = React.useState<MediaStream[]>([])
     React.useEffect(() => {
         if (!room) return
-        const ws = new WebSocket(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/v1/signaling/ws`)
+        const ws = new WebSocket(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/v1/signaling/ws`)
         const pc = newPeer()
         wireSignalling(pc, ws, room, false)
         pc.ontrack = (ev) =>
