@@ -22,3 +22,17 @@ export const presignRecording = (objectKey: string) =>
     `/v1/recordings/presign?object=${encodeURIComponent(objectKey)}`,
     { credentials: "omit" }
   );
+
+export async function saveEyeTrackingResults(tid: string, blendshapes: any[]) {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/v1/trainings/${tid}/eye-tracking`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ blendshapes }),
+      credentials: "include",
+    }
+  );
+  if (!res.ok) throw new Error("Failed to save eye tracking results");
+  return res.json();
+}

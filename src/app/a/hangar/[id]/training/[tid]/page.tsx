@@ -25,6 +25,7 @@ import {
     presignRecording,
 } from "@/lib/api/recordings"
 import { useFaceTracking } from "@/hooks/useFaceTracking"
+import { EyeTrackingHeatmap } from "@/components/eye-tracking-heatmap"
 
 
 pdfjs.GlobalWorkerOptions.workerSrc =
@@ -155,6 +156,7 @@ export default function TrainingPage() {
         setIsRec(false)
         const { object, url } = await finishRecording(tid, prefix.current!)
         console.log("Recording finished:", object, url)
+        await saveEyeTrackingResults(tid, blendshapesLog)
     }
 
     function toggleRec() {
@@ -237,6 +239,7 @@ export default function TrainingPage() {
                     </Button>
                 </div>
             </div>
+            <EyeTrackingHeatmap trainingId={tid} />
         </div>
     )
 }

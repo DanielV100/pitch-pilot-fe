@@ -41,17 +41,26 @@ import { TrainingCard } from "@/components/hangar/training-card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { TrainingSetupDialog } from "@/components/hangar/training-setup-stepper"
+import { EyeTrackingHeatmap } from "@/components/eye-tracking-heatmap"
+import { EyeTrackingHeatmapGrid } from "@/components/eye-tracking-heatmap";
+import { getTrainingsForPresentation } from "@/lib/api/trainings"
 
 export default function HangarPage() {
     const router = useRouter()
     const { id } = useParams()
     const [presentation, setPresentation] = useState<Presentation>()
     const [tId, setTId] = useState<string | null>("")
+    const [detailedTrainings, setDetailedTrainings] = useState<Record<string, any>>({})
 
     useEffect(() => {
         const load = async () => {
             const data = await getPresentation(id as string)
-            setPresentation(data)
+            // Hole alle Trainings für die Präsentation
+            const trainings = await getTrainingsForPresentation(id as string)
+            setDetailedTrainings(
+                Object.fromEntries(trainings.map((t: any) => [t.id, t]))
+            )
+            setPresentation({ ...data, trainings })
         }
         load()
     }, [id])
@@ -109,8 +118,6 @@ export default function HangarPage() {
 
             <section>
                 <FancySeparator label="Flight Dashboard" icon={<BarChart3 className="w-4 h-4" />} />
-
-
 
                 <div className="flex flex-wrap gap-6">
                     <Card className="w-full lg:w-[48%]">
@@ -187,17 +194,43 @@ export default function HangarPage() {
                         <Eye />
                         Inspect Deck
                     </Button>
-
                 </div>
                 <HangarFindingsSection />
             </section>
             <section>
                 <FancySeparator label="Training Logbook" icon={<Notebook className="w-4 h-4" />} />
-
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {presentation.trainings.map((training: Training, index) => (
                         <TrainingCard key={index} onBoard={() => console.log('test')} training={training} />
+                    ))}
+                </div>
+            </section>
+            <section>
+                <FancySeparator label="Eye Tracking Analysis" icon={<Eye className="w-4 h-4" />} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {presentation.trainings.map((training: Training, index) => {
+                        const detail = detailedTrainings[training.id]
+                        return (
+                            <div key={index} className="flex flex-col gap-4 p-4 border rounded-md">
+                                <h3 className="text-lg font-semibold">{`Training ${index + 1}`}</h3>
+                                <div className="text-2xl font-bold text-blue-700">
+                                    Aufmerksamkeitsscore: {detail && typeof detail.eye_tracking_total_score === "number"
+                                        ? Math.round(detail.eye_tracking_total_score * 100)
+                                        : "-"}%
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            </section>
+            <section>
+                <FancySeparator label="Eye Tracking Heatmaps" icon={<Eye className="w-4 h-4" />} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {presentation.trainings.map((training) => (
+                        <div key={training.id}>
+                            <h3>Training {training.id}</h3>
+                            <EyeTrackingHeatmap trainingId={training.id} />
+                        </div>
                     ))}
                 </div>
             </section>

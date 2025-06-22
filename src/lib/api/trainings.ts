@@ -23,3 +23,9 @@ export async function patchTrainingScore(
     body: JSON.stringify({ total_score }),
   });
 }
+export async function getTrainingsForPresentation(presentationId: string) {
+    console.log("getTrainingsForPresentation called with:", presentationId)
+    const res = await fetch(`/api/v1/trainings/${presentationId}/get-trainings`)
+    if (!res.ok) throw new Error("Failed to fetch trainings")
+    return res.json()
+}

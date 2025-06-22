@@ -58,4 +58,5 @@ export interface Training {
   eye_calibration?: Record<string, unknown> | null;
   total_score: number;
   date: string;
+  eye_tracking_total_score?: number; // Aufmerksamkeitsscore
 }
