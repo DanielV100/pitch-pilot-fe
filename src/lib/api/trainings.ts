@@ -17,9 +17,17 @@ export async function patchTrainingScore(
   trainingId: string,
   total_score: number
 ): Promise<Training> {
-  return request<Training>(`/trainings/${trainingId}/add-score`, {
+  return request<Training>(`/v1/trainings/${trainingId}/add-score`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ total_score }),
+  });
+}
+
+export async function getTrainingById(trainingId: string): Promise<Training> {
+  return request<Training>(`/v1/trainings/${trainingId}/get-training`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
   });
 }

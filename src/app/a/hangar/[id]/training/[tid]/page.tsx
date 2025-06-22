@@ -26,7 +26,6 @@ import {
 } from "@/lib/api/recordings"
 import { useFaceTracking } from "@/hooks/useFaceTracking"
 
-
 pdfjs.GlobalWorkerOptions.workerSrc =
     `//unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`
 
@@ -58,15 +57,31 @@ export default function TrainingPage() {
     const [numPages, setNumPages] = React.useState(0)
     const [page, setPage] = React.useState(1)
     const [secs, setSecs] = React.useState(0)
-    const blendshapes = useFaceTracking(previewRef, tid);
+    const blendshapes = useFaceTracking(previewRef, tid)
     const timer = new Date(secs * 1_000).toISOString().substring(14, 19)
     const [isVideoReady, setIsVideoReady] = React.useState(false)
 
-    React.useEffect(() => {
-        const t = setInterval(() => setSecs((s) => s + 1), 1_000)
-        return () => clearInterval(t)
-    }, [])
+    // For precise timing, use a monotonic clock
+    const [recStart, setRecStart] = React.useState<number | null>(null)
+    const [slideEvents, setSlideEvents] = React.useState<{ timestamp: number, page: number }[]>([])
+    const slideEventsRef = React.useRef<{ timestamp: number, page: number }[]>([]);
+    const [isRec, setIsRec] = React.useState(false)
+    const [playUrl, setPlayUrl] = React.useState<string | null>(null)
 
+    function updateSlideEvents(events: { timestamp: number, page: number }[]) {
+        slideEventsRef.current = events;
+        setSlideEvents(events);
+    }
+    // --- Update timer every second during rec ---
+    React.useEffect(() => {
+        let t: NodeJS.Timeout
+        if (isRec) {
+            t = setInterval(() => setSecs(Math.floor(((Date.now() - (recStart ?? 0)) / 1000))), 1000)
+        }
+        return () => clearInterval(t)
+    }, [isRec, recStart])
+
+    // --- Setup camera preview ---
     React.useEffect(() => {
         navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((s) => {
             setLocalStream(s)
@@ -79,15 +94,7 @@ export default function TrainingPage() {
         })
     }, [])
 
-
-
-    React.useEffect(() => {
-        if (blendshapes) {
-            console.log("Blendshapes from hook:", blendshapes);
-            const jawOpen = blendshapes.find(shape => shape.categoryName === 'jawOpen')?.score || 0;
-        }
-    }, [blendshapes]);
-
+    // --- Handle incoming video streams (WebRTC), unchanged ---
     const [streams, setStreams] = React.useState<MediaStream[]>([])
     React.useEffect(() => {
         if (!tid) return
@@ -104,9 +111,51 @@ export default function TrainingPage() {
         }
     }, [tid])
 
-    const [isRec, setIsRec] = React.useState(false)
-    const [playUrl, setPlayUrl] = React.useState<string | null>(null)
+    // --- Slide event tracking logic ---
+    // Call this when page changes, and only if rec is running
+    const recordSlideChange = React.useCallback((newPage: number) => {
+        if (!isRec) return;
+        const now = ((Date.now() - (recStart ?? 0)) / 1000);
+        const prevEvents = slideEventsRef.current;
+        if (prevEvents.length && prevEvents[prevEvents.length - 1].page === newPage) return;
+        const nextEvents = [...prevEvents, { timestamp: now, page: newPage }];
+        updateSlideEvents(nextEvents);
+    }, [isRec, recStart]);
 
+    // --- Navigation handlers ---
+    const goToPrevPage = React.useCallback(() => {
+        setPage((prev) => {
+            const next = Math.max(prev - 1, 1)
+            if (next !== prev) recordSlideChange(next)
+            return next
+        })
+    }, [recordSlideChange])
+    const goToNextPage = React.useCallback(() => {
+        setPage((prev) => {
+            const next = Math.min(prev + 1, numPages)
+            if (next !== prev) recordSlideChange(next)
+            return next
+        })
+    }, [numPages, recordSlideChange])
+
+    // --- Keyboard arrow navigation ---
+    React.useEffect(() => {
+        const h = (e: KeyboardEvent) => {
+            if (e.key === "ArrowRight") goToNextPage()
+            if (e.key === "ArrowLeft") goToPrevPage()
+        }
+        window.addEventListener("keydown", h)
+        return () => window.removeEventListener("keydown", h)
+    }, [goToNextPage, goToPrevPage])
+
+    // --- On rec start, always record initial slide event ---
+    React.useEffect(() => {
+        if (isRec && slideEvents.length === 0) {
+            recordSlideChange(page)
+        }
+    }, [isRec, slideEvents.length, page, recordSlideChange])
+
+    // --- Recording logic (unchanged except for recStart) ---
     const putUrls = React.useRef<string[]>([])
     const partIdx = React.useRef(0)
     const prefix = React.useRef<string>(null)
@@ -119,6 +168,9 @@ export default function TrainingPage() {
         putUrls.current = urls
         partIdx.current = 0
         setPlayUrl(null)
+        setRecStart(Date.now());
+        updateSlideEvents([]);  // Instead of setSlideEvents([])
+        setSecs(0);     // Reset timer
 
         const mr = new MediaRecorder(localStream, { mimeType: "video/webm;codecs=vp8,opus" })
         const TARGET = 5 * 1024 * 1024
@@ -153,22 +205,13 @@ export default function TrainingPage() {
     /* finish → compose → presign */
     async function finalizeRecording() {
         setIsRec(false)
-        const { object, url } = await finishRecording(tid, prefix.current!)
-        console.log("Recording finished:", object, url)
+        await finishRecording(tid, prefix.current!, slideEventsRef.current!)
+        console.log("Slide events:", slideEventsRef.current); // Always latest!
     }
 
     function toggleRec() {
         isRec ? recorder.current?.stop() : startRec()
     }
-
-    React.useEffect(() => {
-        const h = (e: KeyboardEvent) => {
-            if (e.key === "ArrowRight") setPage((p) => Math.min(p + 1, numPages))
-            if (e.key === "ArrowLeft") setPage((p) => Math.max(p - 1, 1))
-        }
-        window.addEventListener("keydown", h)
-        return () => window.removeEventListener("keydown", h)
-    }, [numPages])
 
     return (
         <div className="relative h-full w-full flex">
@@ -227,12 +270,12 @@ export default function TrainingPage() {
                     </aside>
                 </div>
                 <div className="flex items-center justify-center gap-6 select-none">
-                    <Button variant="ghost" size="icon" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+                    <Button variant="ghost" size="icon" disabled={page === 1} onClick={goToPrevPage}>
                         <ChevronLeft className="w-5 h-5" />
                     </Button>
                     {page}
                     <span className="text-muted-foreground">/ {numPages || "…"}</span>
-                    <Button variant="ghost" size="icon" disabled={page === numPages} onClick={() => setPage((p) => p + 1)}>
+                    <Button variant="ghost" size="icon" disabled={page === numPages} onClick={goToNextPage}>
                         <ChevronRight className="w-5 h-5" />
                     </Button>
                 </div>
