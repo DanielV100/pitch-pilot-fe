@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { getTrainingsForPresentation } from "@/lib/api/trainings";
 
 type Props = {
   trainingId: string;
@@ -6,51 +7,30 @@ type Props = {
 
 export function EyeTrackingHeatmap({ trainingId }: Props) {
   const [heatmap, setHeatmap] = useState<Record<string, number>>({});
+  const [score, setScore] = useState<number | null>(null);
   const gridSize = 40;
   const cellSize = 10;
 
-  // Hilfsfunktion wie in face-calculate.tsx
-  function getGazeXY(scores: number[]) {
-    const BLENDSHAPE_NAMES = [
-      "_neutral", "browDownLeft", "browDownRight", "browInnerUp", "browOuterUpLeft", "browOuterUpRight",
-      "cheekPuff", "cheekSquintLeft", "cheekSquintRight", "eyeBlinkLeft", "eyeBlinkRight", "eyeLookDownLeft",
-      "eyeLookDownRight", "eyeLookInLeft", "eyeLookInRight", "eyeLookOutLeft", "eyeLookOutRight", "eyeLookUpLeft",
-      "eyeLookUpRight", "eyeSquintLeft", "eyeSquintRight", "eyeWideLeft", "eyeWideRight", "jawForward", "jawLeft",
-      "jawOpen", "jawRight", "mouthClose", "mouthDimpleLeft", "mouthDimpleRight", "mouthFrownLeft", "mouthFrownRight",
-      "mouthFunnel", "mouthLeft", "mouthLowerDownLeft", "mouthLowerDownRight", "mouthPressLeft", "mouthPressRight",
-      "mouthPucker", "mouthRight", "mouthRollLower", "mouthRollUpper", "mouthShrugLower", "mouthShrugUpper",
-      "mouthSmileLeft", "mouthSmileRight", "mouthStretchLeft", "mouthStretchRight", "mouthUpperUpLeft",
-      "mouthUpperUpRight", "noseSneerLeft", "noseSneerRight"
-    ];
-    const idx = (name: string) => {
-      const i = BLENDSHAPE_NAMES.indexOf(name);
-      return i >= 0 ? i : 0;
-    };
-    const left = scores[idx("eyeLookOutLeft")] + scores[idx("eyeLookInRight")];
-    const right = scores[idx("eyeLookInLeft")] + scores[idx("eyeLookOutRight")];
-    const x = (left - right) / 2;
-    const up = scores[idx("eyeLookUpLeft")] + scores[idx("eyeLookUpRight")];
-    const down = scores[idx("eyeLookDownLeft")] + scores[idx("eyeLookDownRight")];
-    const y = (up - down) / 2;
-    return { x, y };
-  }
-
   useEffect(() => {
-    async function fetchBlendshapes() {
-      const res = await fetch(`/api/v1/blendshapes/${trainingId}`);
-      const data = await res.json();
-      const counts: Record<string, number> = {};
-      data.forEach((row: any) => {
-        const { x, y } = getGazeXY(row.scores);
-        const nx = Math.round(((x + 1) / 2) * 100);
-        const yStretched = Math.max(-1, Math.min(1, y * 1.2 + 0.3));
-        const ny = Math.round(((yStretched + 1) / 2) * 100);
-        const key = `${nx},${ny}`;
-        counts[key] = (counts[key] || 0) + 1;
-      });
-      setHeatmap(counts);
+    async function fetchPersistedHeatmap() {
+      try {
+        const res = await fetch(`/api/v1/training/${trainingId}/get-trainings`);
+        const trainings = await res.json();
+        const training = Array.isArray(trainings)
+          ? trainings.find((t: any) => t.id === trainingId)
+          : trainings;
+        if (training && training.eye_tracking_scores) {
+          setHeatmap(training.eye_tracking_scores);
+        }
+        if (training && typeof training.eye_tracking_total_score === "number") {
+          setScore(training.eye_tracking_total_score);
+        }
+      } catch (e) {
+        setHeatmap({});
+        setScore(null);
+      }
     }
-    fetchBlendshapes();
+    fetchPersistedHeatmap();
   }, [trainingId]);
 
   // Heatmap-Grid bauen
@@ -67,7 +47,10 @@ export function EyeTrackingHeatmap({ trainingId }: Props) {
 
   return (
     <div className="mt-4 p-2 bg-gray-100 rounded shadow text-sm font-mono">
-      <div>Heatmap der Blickpunkte:</div>
+      <div>Persisted Eye Tracking Heatmap:</div>
+      {score !== null && (
+        <div className="mb-2">Aufmerksamkeitsscore: {Math.round(score * 100)}%</div>
+      )}
       <div
         style={{
           display: "grid",
