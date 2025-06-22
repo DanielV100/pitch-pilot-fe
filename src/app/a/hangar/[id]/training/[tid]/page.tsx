@@ -26,6 +26,7 @@ import {
 } from "@/lib/api/recordings"
 import { useFaceTracking } from "@/hooks/useFaceTracking"
 import { EyeTrackingHeatmap } from "@/components/eye-tracking-heatmap"
+import { saveEyeTrackingResults } from "@/lib/api/recordings"
 
 
 pdfjs.GlobalWorkerOptions.workerSrc =
@@ -59,6 +60,7 @@ export default function TrainingPage() {
     const [numPages, setNumPages] = React.useState(0)
     const [page, setPage] = React.useState(1)
     const [secs, setSecs] = React.useState(0)
+    const [blendshapesLog, setBlendshapesLog] = React.useState<any[]>([]);
     const blendshapes = useFaceTracking(previewRef, tid);
     const timer = new Date(secs * 1_000).toISOString().substring(14, 19)
     const [isVideoReady, setIsVideoReady] = React.useState(false)
@@ -84,8 +86,7 @@ export default function TrainingPage() {
 
     React.useEffect(() => {
         if (blendshapes) {
-            console.log("Blendshapes from hook:", blendshapes);
-            const jawOpen = blendshapes.find(shape => shape.categoryName === 'jawOpen')?.score || 0;
+            setBlendshapesLog((log) => [...log, blendshapes]);
         }
     }, [blendshapes]);
 

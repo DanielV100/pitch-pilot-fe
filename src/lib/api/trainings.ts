@@ -10,6 +10,7 @@ export async function createTraining(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    credentials: "include",
   });
 }
 
@@ -21,11 +22,12 @@ export async function patchTrainingScore(
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ total_score }),
+    credentials: "include",
   });
 }
+
 export async function getTrainingsForPresentation(presentationId: string) {
-    console.log("getTrainingsForPresentation called with:", presentationId)
-    const res = await fetch(`/api/v1/trainings/${presentationId}/get-trainings`)
-    if (!res.ok) throw new Error("Failed to fetch trainings")
-    return res.json()
+  return request<Training[]>(`/v1/trainings/${presentationId}/get-trainings`, {
+    credentials: "include",
+  });
 }
