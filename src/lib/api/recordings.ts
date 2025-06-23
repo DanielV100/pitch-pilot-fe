@@ -6,13 +6,14 @@ export const startRecording = (trainingId: string) =>
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ training_id: trainingId }),
-    credentials: "omit",
+    credentials: "include",
   });
 
 export const finishRecording = (
   trainingId: string,
   prefix: string,
-  slideEvents: { timestamp: number; page: number }[]
+  slideEvents: { timestamp: number; page: number }[],
+  blendshapes: any[]
 ) =>
   request<FinishRes>("/v1/recordings/finish", {
     method: "POST",
@@ -21,14 +22,15 @@ export const finishRecording = (
       training_id: trainingId,
       prefix,
       slide_events: slideEvents,
+      blendshapes,
     }),
-    credentials: "omit",
+    credentials: "include",
   });
 
 export const presignRecording = (objectKey: string) =>
   request<PresignRes>(
     `/v1/recordings/presign?object=${encodeURIComponent(objectKey)}`,
-    { credentials: "omit" }
+    { credentials: "include" }
   );
 
 export async function saveEyeTrackingResults(tid: string, blendshapes: any[]) {

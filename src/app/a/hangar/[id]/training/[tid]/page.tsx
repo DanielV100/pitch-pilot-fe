@@ -201,11 +201,26 @@ export default function TrainingPage() {
         recorder.current = mr
     }
 
+    // Blendshapes-Log für Persistenz
+    const blendshapesLog = React.useRef<any[]>([])
+    React.useEffect(() => {
+        if (status === "recording" && blendshapes) {
+            blendshapesLog.current.push({
+                timestamp: Date.now() - (recStart ?? 0),
+                scores: blendshapes
+            })
+        }
+        if (status === "idle") {
+            blendshapesLog.current = []
+        }
+    }, [blendshapes, status, recStart])
+
     async function finalizeRecording() {
         setIsRec(false)
         setStatus("finished")
-        await finishRecording(tid, prefix.current!, slideEventsRef.current!)
+        await finishRecording(tid, prefix.current!, slideEventsRef.current!, blendshapesLog.current)
         console.log("Slide events:", slideEventsRef.current)
+        console.log("BlendshapesLog:", blendshapesLog.current)
     }
     async function handleStart() {
         if (status === "recording") return
@@ -353,7 +368,7 @@ export default function TrainingPage() {
                     </Button>
                 </div>
             </div>
-            <EyeTrackingHeatmap trainingId={tid} />
+        
         </div>
     )
 }

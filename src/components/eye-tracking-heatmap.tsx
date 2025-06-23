@@ -14,20 +14,29 @@ export function EyeTrackingHeatmap({ trainingId }: Props) {
   useEffect(() => {
     async function fetchPersistedHeatmap() {
       try {
-        const res = await fetch (`http://localhost:8000/api/v1/trainings/${trainingId}/get-trainings`, { credentials: "include" });
-        const trainings = await res.json();
-        const training = Array.isArray(trainings)
-          ? trainings.find((t: any) => t.id === trainingId)
-          : trainings;
+        const res = await fetch(
+          `/api/v1/trainings/${trainingId}/get-training`,
+          { credentials: "include" }
+        );
+        if (!res.ok) throw new Error("API error");
+        const training = await res.json();
+        console.log("[EyeTrackingHeatmap] API training result:", training);
         if (training && training.eye_tracking_scores) {
           setHeatmap(training.eye_tracking_scores);
+          console.log("[EyeTrackingHeatmap] Heatmap: ", training.eye_tracking_scores);
+        } else {
+          setHeatmap({});
         }
         if (training && typeof training.eye_tracking_total_score === "number") {
           setScore(training.eye_tracking_total_score);
+          console.log("[EyeTrackingHeatmap] Score: ", training.eye_tracking_total_score);
+        } else {
+          setScore(null);
         }
       } catch (e) {
         setHeatmap({});
         setScore(null);
+        console.error("[EyeTrackingHeatmap] Error fetching heatmap:", e);
       }
     }
     fetchPersistedHeatmap();
