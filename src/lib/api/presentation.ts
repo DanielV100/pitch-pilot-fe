@@ -61,3 +61,15 @@ export async function getActiveFinding(
     }
   );
 }
+
+export async function getPresentationFileUrl(
+  presentationId: string
+): Promise<{ file_url: string }> {
+  return await request<{ file_url: string }>(
+    `/v1/presentations/${presentationId}/get-file-url`,
+    {
+      credentials: "include",
+      cache: "no-store",
+    }
+  );
+}

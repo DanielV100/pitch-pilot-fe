@@ -3,6 +3,7 @@ export type Presentation = {
   name: string;
   tags: string[];
   trainings: Training[];
+  file_url?: string;
 };
 
 export type FindingBar = {

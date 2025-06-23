@@ -9,19 +9,20 @@ import { cn } from "@/lib/utils"
 import { getTrainingById } from "@/lib/api/trainings"
 import { Training, TrainingResult } from "@/types/presentation"
 import { FlightLogSidebar } from "@/components/flight-log/bar-with-cards"
+import { getPresentationFileUrl } from "@/lib/api/presentation"
 
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`
 
 export default function FlightLogMain() {
-    const pdfUrl = "/test_pdf.pdf"
-    const { tid: tid } = useParams<{ tid: string }>()
+    const { tid: tid, id } = useParams<{ tid: string, id: string }>()
     const videoRef = useRef<HTMLVideoElement>(null)
     const [numPages, setNumPages] = useState(0)
     const [currentPage, setCurrentPage] = useState(1)
     const [showHeat, setShowHeat] = useState(false)
     const [log, setLog] = useState<Training | null>(null)
     const [loading, setLoading] = useState(true)
+    const [fileUrl, setFileUrl] = useState<string>("")
 
     useEffect(() => {
         setLoading(true)
@@ -45,10 +46,22 @@ export default function FlightLogMain() {
         video.addEventListener("timeupdate", onTimeUpdate)
         return () => video.removeEventListener("timeupdate", onTimeUpdate)
     }, [log?.slide_events, currentPage])
+    useEffect(() => {
+        async function fetchData() {
+            try {
+                const fileUrlObj = await getPresentationFileUrl(id as string);
+                setFileUrl(fileUrlObj.file_url);
+            } catch (err) {
+                console.error("Failed to load slides url ", err)
+            }
+        }
+        if (id) fetchData()
+    }, [id])
 
     if (loading || !log) {
         return <div className="flex-1 flex items-center justify-center text-muted-foreground">Loading…</div>
     }
+
 
     return (
         <div className="w-full px-4 pb-8 pt-2" style={{ minHeight: 420 }}>
@@ -74,7 +87,7 @@ export default function FlightLogMain() {
                             )}
                         >
                             <Document
-                                file={pdfUrl}
+                                file={fileUrl}
                                 onLoadSuccess={({ numPages }) => setNumPages(numPages)}
                                 loading={<div className="text-muted-foreground">Loading slides…</div>}
                             >

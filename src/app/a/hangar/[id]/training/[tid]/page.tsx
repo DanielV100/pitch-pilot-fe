@@ -25,11 +25,11 @@ import {
 import { useFaceTracking } from "@/hooks/useFaceTracking"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Separator } from "@/components/ui/separator"
+import { getPresentationFileUrl } from "@/lib/api/presentation"
 
 pdfjs.GlobalWorkerOptions.workerSrc =
     `//unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`
 
-const pdfUrl = "/test_pdf.pdf"
 
 function RemoteVideo({ stream }: { stream: MediaStream }) {
     const ref = React.useRef<HTMLVideoElement>(null)
@@ -52,7 +52,7 @@ function RemoteVideo({ stream }: { stream: MediaStream }) {
 
 // ------- MAIN PAGE -------
 export default function TrainingPage() {
-    const { tid } = useParams<{ tid: string }>()
+    const { tid, id } = useParams<{ tid: string, id: string }>()
     // State for media, timer, recording
     const [localStream, setLocalStream] = React.useState<MediaStream>()
     const previewRef = React.useRef<HTMLVideoElement>(null as unknown as HTMLVideoElement)
@@ -70,6 +70,7 @@ export default function TrainingPage() {
     const [isRec, setIsRec] = React.useState(false)
     const blendshapes = useFaceTracking(previewRef, tid, status === "recording")
     const timer = new Date(secs * 1_000).toISOString().substring(14, 19)
+    const [fileUrl, setFileUrl] = React.useState<string>("")
     React.useEffect(() => {
         navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((s) => {
             setLocalStream(s)
@@ -228,6 +229,21 @@ export default function TrainingPage() {
         }
     }
 
+    React.useEffect(() => {
+        async function fetchData() {
+            try {
+
+                const fileUrlObj = await getPresentationFileUrl(id as string);
+                setFileUrl(fileUrlObj.file_url);
+            } catch (err) {
+                console.error("Failed to load slides url ", err)
+            }
+        }
+        if (id) fetchData()
+    }, [id])
+
+
+
     return (
         <div className="relative h-full w-full flex">
             <div className="absolute top-2 left-1/2 -translate-x-1/2 w-48 h-36 z-20">
@@ -312,7 +328,7 @@ export default function TrainingPage() {
 
                 <div className="flex-1 flex overflow-hidden">
                     <div className="flex-1 bg-sky-100 rounded-md flex items-center justify-center">
-                        <Document file={pdfUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
+                        <Document file={fileUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
                             <Page pageNumber={page} width={900} renderAnnotationLayer={false} renderTextLayer={false} />
                         </Document>
                     </div>

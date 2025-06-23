@@ -8,7 +8,7 @@ import { PdfPreviewCard } from '@/components/ui/pdf-preview-card'
 import { ChartRadialLabel } from '@/components/ui/inspection-radial'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { getActiveFinding } from '@/lib/api/presentation'
+import { getActiveFinding, getPresentationFileUrl } from '@/lib/api/presentation'
 import { FindingTabs } from '@/components/inspection/finding'
 import { FindingEntry } from '@/types/presentation'
 
@@ -34,6 +34,8 @@ const LABEL: Record<1 | 2 | 3 | 4, string> = {
 export default function InspectionPage() {
     const { id: presentationId } = useParams<{ id: string }>()
     const [loading, setLoading] = useState(true)
+    const [fileUrl, setFileUrl] = useState<string>("")
+
 
 
     const [total, setTotal] = useState(0)
@@ -65,6 +67,8 @@ export default function InspectionPage() {
                     setAltitude(Math.round(f.altitude_score))
                     setFlight(Math.round(f.flight_path_score))
                     setCockpit(Math.round(f.cockpit_score))
+                    const fileUrlObj = await getPresentationFileUrl(presentationId);
+                    setFileUrl(fileUrlObj.file_url);
 
 
                     const bucket: Record<1 | 2 | 3 | 4, Finding[]> = { 1: [], 2: [], 3: [], 4: [] }
@@ -104,7 +108,7 @@ export default function InspectionPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mt-6 items-start">
 
-                <PdfPreviewCard url="/test_pdf.pdf" aspectRatio="16/9" />
+                <PdfPreviewCard url={fileUrl} aspectRatio="16/9" />
 
 
                 <div className="flex flex-col items-center">
