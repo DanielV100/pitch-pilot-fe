@@ -11,7 +11,7 @@ import { BarChart, Bar, XAxis, CartesianGrid } from "recharts"
 import { PdfPreviewCard } from "../ui/pdf-preview-card"
 import { useParams, useSearchParams } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
-import { getFindingBars } from "@/lib/api/presentation"
+import { getFindingBars, getPresentationFileUrl } from "@/lib/api/presentation"
 
 export function HangarFindingsSection() {
     const { id: presentationId } = useParams()
@@ -19,12 +19,15 @@ export function HangarFindingsSection() {
     const [findings, setFindings] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const searchParams = useSearchParams()
+    const [fileUrl, setFileUrl] = useState<string>("")
 
     useEffect(() => {
         async function fetchData() {
             try {
                 const data = await getFindingBars(presentationId as string)
                 setFindings(data)
+                const fileUrlObj = await getPresentationFileUrl(presentationId as string);
+                setFileUrl(fileUrlObj.file_url);
             } catch (err) {
                 console.error("Failed to load findings", err)
             } finally {
@@ -57,9 +60,26 @@ export function HangarFindingsSection() {
         high: { label: "High", color: "var(--chart-3)" },
     } as const
 
+    if (!presentationId || !fileUrl) {
+        return (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10">
+                <Skeleton className="h-[240px] w-full rounded-md" />
+                <Card className="h-[240px]">
+                    <CardHeader>
+                        <CardTitle>Deck Inspection</CardTitle>
+                        <CardDescription>
+                            Your slides have been scanned. We found{" "}
+                            <span className="font-semibold text-primary underline">...</span> areas that need your attention before takeoff.
+                        </CardDescription>
+                    </CardHeader>
+                </Card>
+            </div>
+        )
+    }
+
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10">
-            <PdfPreviewCard url="/test_pdf.pdf" aspectRatio="16/9" />
+            <PdfPreviewCard url={fileUrl} aspectRatio="16/9" />
 
             <Card>
                 <CardHeader>

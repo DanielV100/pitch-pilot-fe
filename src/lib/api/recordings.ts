@@ -9,11 +9,19 @@ export const startRecording = (trainingId: string) =>
     credentials: "omit",
   });
 
-export const finishRecording = (trainingId: string, prefix: string) =>
+export const finishRecording = (
+  trainingId: string,
+  prefix: string,
+  slideEvents: { timestamp: number; page: number }[]
+) =>
   request<FinishRes>("/v1/recordings/finish", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ training_id: trainingId, prefix }),
+    body: JSON.stringify({
+      training_id: trainingId,
+      prefix,
+      slide_events: slideEvents,
+    }),
     credentials: "omit",
   });
 

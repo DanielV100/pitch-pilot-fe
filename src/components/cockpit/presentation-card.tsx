@@ -8,6 +8,7 @@ import { Training } from "@/types/presentation"
 import { Badge } from "../ui/badge"
 import { ProgressFlight } from "../ui/progress-flight"
 import { PdfPreviewCard } from "../ui/pdf-preview-card"
+import { useEffect, useState } from "react"
 
 
 type PresentationCardProps = {
@@ -15,9 +16,10 @@ type PresentationCardProps = {
     tags: string[]
     trainings: Training[]
     onBoard?: () => void
+    fileUrl: string
 }
 
-export function PresentationCard({ name, tags, trainings, onBoard }: PresentationCardProps) {
+export function PresentationCard({ name, tags, trainings, onBoard, fileUrl }: PresentationCardProps) {
     const lastSession = trainings.at(-1)
     const avgScore =
         trainings.length > 0
@@ -25,6 +27,8 @@ export function PresentationCard({ name, tags, trainings, onBoard }: Presentatio
             : null
 
     const travelProgress = Math.min(avgScore ?? 0, 100)
+
+
 
     return (
         <Card className="relative rounded-[24px] border border-gray-200 shadow-none! overflow-hidden">
@@ -48,7 +52,7 @@ export function PresentationCard({ name, tags, trainings, onBoard }: Presentatio
                 <ProgressFlight score={travelProgress} trainings={trainings.length} />
 
                 <div className="aspect-video bg-blue-100 rounded-xl mb-6">
-                    <PdfPreviewCard url="/test_pdf.pdf" aspectRatio="16/9" />
+                    <PdfPreviewCard url={fileUrl} aspectRatio="16/9" />
                 </div>
 
 

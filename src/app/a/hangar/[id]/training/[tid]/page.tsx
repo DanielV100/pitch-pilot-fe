@@ -12,27 +12,24 @@ import {
     MoreVertical,
     CircleDot,
     Play,
+    ReplyAll,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { newPeer, wireSignalling } from "@/lib/websocket/webrtc"
-import { FilesetResolver, FaceLandmarker } from "@mediapipe/tasks-vision"
-
 import {
     startRecording,
     finishRecording,
-    presignRecording,
 } from "@/lib/api/recordings"
 import { useFaceTracking } from "@/hooks/useFaceTracking"
-import { EyeTrackingHeatmap } from "@/components/eye-tracking-heatmap"
-import { saveEyeTrackingResults } from "@/lib/api/recordings"
-
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { Separator } from "@/components/ui/separator"
+import { getPresentationFileUrl } from "@/lib/api/presentation"
 
 pdfjs.GlobalWorkerOptions.workerSrc =
     `//unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`
 
-const pdfUrl = "/test_pdf.pdf"
 
 function RemoteVideo({ stream }: { stream: MediaStream }) {
     const ref = React.useRef<HTMLVideoElement>(null)
@@ -53,23 +50,27 @@ function RemoteVideo({ stream }: { stream: MediaStream }) {
     )
 }
 
+// ------- MAIN PAGE -------
 export default function TrainingPage() {
-    const { tid: tid } = useParams<{ tid: string }>()
+    const { tid, id } = useParams<{ tid: string, id: string }>()
+    // State for media, timer, recording
     const [localStream, setLocalStream] = React.useState<MediaStream>()
     const previewRef = React.useRef<HTMLVideoElement>(null as unknown as HTMLVideoElement)
     const [numPages, setNumPages] = React.useState(0)
     const [page, setPage] = React.useState(1)
     const [secs, setSecs] = React.useState(0)
-    const [blendshapesLog, setBlendshapesLog] = React.useState<any[]>([]);
-    const blendshapes = useFaceTracking(previewRef, tid);
-    const timer = new Date(secs * 1_000).toISOString().substring(14, 19)
+    const [status, setStatus] = React.useState<'idle' | 'recording' | 'finished'>('idle')
+    const timerRef = React.useRef<NodeJS.Timeout>(null)
+    const [recStart, setRecStart] = React.useState<number | null>()
+    const [slideEvents, setSlideEvents] = React.useState<{ timestamp: number, page: number }[]>([])
+    const slideEventsRef = React.useRef<{ timestamp: number, page: number }[]>([]);
     const [isVideoReady, setIsVideoReady] = React.useState(false)
-
-    React.useEffect(() => {
-        const t = setInterval(() => setSecs((s) => s + 1), 1_000)
-        return () => clearInterval(t)
-    }, [])
-
+    const [playUrl, setPlayUrl] = React.useState<string | null>(null)
+    const [streams, setStreams] = React.useState<MediaStream[]>([])
+    const [isRec, setIsRec] = React.useState(false)
+    const blendshapes = useFaceTracking(previewRef, tid, status === "recording")
+    const timer = new Date(secs * 1_000).toISOString().substring(14, 19)
+    const [fileUrl, setFileUrl] = React.useState<string>("")
     React.useEffect(() => {
         navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((s) => {
             setLocalStream(s)
@@ -82,15 +83,6 @@ export default function TrainingPage() {
         })
     }, [])
 
-
-
-    React.useEffect(() => {
-        if (blendshapes) {
-            setBlendshapesLog((log) => [...log, blendshapes]);
-        }
-    }, [blendshapes]);
-
-    const [streams, setStreams] = React.useState<MediaStream[]>([])
     React.useEffect(() => {
         if (!tid) return
         const ws = new WebSocket(`${process.env.NEXT_PUBLIC_API_URL}/v1/ws/signaling/join`)
@@ -105,9 +97,61 @@ export default function TrainingPage() {
             pc.close(); ws.close()
         }
     }, [tid])
+    function updateSlideEvents(events: { timestamp: number, page: number }[]) {
+        slideEventsRef.current = events;
+        setSlideEvents(events);
+    }
+    const goToPrevPage = React.useCallback(() => {
+        setPage((prev) => {
+            const next = Math.max(prev - 1, 1)
+            if (next !== prev && status === "recording") recordSlideChange(next)
+            return next
+        })
+    }, [status])
+    const goToNextPage = React.useCallback(() => {
+        setPage((prev) => {
+            const next = Math.min(prev + 1, numPages)
+            if (next !== prev && status === "recording") recordSlideChange(next)
+            return next
+        })
+    }, [status, numPages])
+    const recordSlideChange = React.useCallback((newPage: number) => {
+        if (status !== "recording") return;
+        const now = ((Date.now() - (recStart ?? 0)) / 1000);
+        const prevEvents = slideEventsRef.current;
+        if (prevEvents.length && prevEvents[prevEvents.length - 1].page === newPage) return;
+        const nextEvents = [...prevEvents, { timestamp: now, page: newPage }];
+        updateSlideEvents(nextEvents);
+    }, [status, recStart]);
 
-    const [isRec, setIsRec] = React.useState(false)
-    const [playUrl, setPlayUrl] = React.useState<string | null>(null)
+    React.useEffect(() => {
+        if (status === "recording" && slideEvents.length === 0) {
+            recordSlideChange(page)
+        }
+    }, [status, slideEvents.length, page, recordSlideChange])
+
+    React.useEffect(() => {
+        if (status === "recording") {
+            timerRef.current = setInterval(() =>
+                setSecs(Math.floor((Date.now() - (recStart ?? 0)) / 1000)), 1000
+            )
+        } else {
+            clearInterval(timerRef.current!)
+        }
+        return () => clearInterval(timerRef.current!)
+    }, [status, recStart])
+
+    React.useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 's' || e.key === 'S') handleStart()
+            if (e.key === 'e' || e.key === 'E') handleEnd()
+            if (e.key === 'r' || e.key === 'R') handleRestart()
+            if (e.key === "ArrowRight") goToNextPage()
+            if (e.key === "ArrowLeft") goToPrevPage()
+        }
+        window.addEventListener('keydown', onKeyDown)
+        return () => window.removeEventListener('keydown', onKeyDown)
+    }, [goToNextPage, goToPrevPage])
 
     const putUrls = React.useRef<string[]>([])
     const partIdx = React.useRef(0)
@@ -115,12 +159,18 @@ export default function TrainingPage() {
     const recorder = React.useRef<MediaRecorder>(null)
 
     async function startRec() {
+        console.log('test')
         if (!localStream) return
         const { prefix: pre, urls } = await startRecording(tid)
         prefix.current = pre
         putUrls.current = urls
         partIdx.current = 0
         setPlayUrl(null)
+        setRecStart(Date.now());
+        updateSlideEvents([]);
+        setSecs(0);
+        setIsRec(true)
+        setStatus("recording")
 
         const mr = new MediaRecorder(localStream, { mimeType: "video/webm;codecs=vp8,opus" })
         const TARGET = 5 * 1024 * 1024
@@ -149,29 +199,50 @@ export default function TrainingPage() {
 
         mr.start(5_000)
         recorder.current = mr
-        setIsRec(true)
     }
 
-    /* finish → compose → presign */
     async function finalizeRecording() {
         setIsRec(false)
-        const { object, url } = await finishRecording(tid, prefix.current!)
-        console.log("Recording finished:", object, url)
-        await saveEyeTrackingResults(tid, blendshapesLog)
+        setStatus("finished")
+        await finishRecording(tid, prefix.current!, slideEventsRef.current!)
+        console.log("Slide events:", slideEventsRef.current)
+    }
+    async function handleStart() {
+        if (status === "recording") return
+        await startRec()
     }
 
-    function toggleRec() {
-        isRec ? recorder.current?.stop() : startRec()
+    function handleRestart() {
+        if (recorder.current && status === 'recording') recorder.current.stop()
+        setStatus('idle')
+        setSecs(0)
+        setRecStart(null)
+        setSlideEvents([])
+        updateSlideEvents([])
+        setIsRec(false)
+        setPlayUrl(null)
+    }
+
+    function handleEnd() {
+        if (recorder.current && status === 'recording') {
+            recorder.current.stop()
+        }
     }
 
     React.useEffect(() => {
-        const h = (e: KeyboardEvent) => {
-            if (e.key === "ArrowRight") setPage((p) => Math.min(p + 1, numPages))
-            if (e.key === "ArrowLeft") setPage((p) => Math.max(p - 1, 1))
+        async function fetchData() {
+            try {
+
+                const fileUrlObj = await getPresentationFileUrl(id as string);
+                setFileUrl(fileUrlObj.file_url);
+            } catch (err) {
+                console.error("Failed to load slides url ", err)
+            }
         }
-        window.addEventListener("keydown", h)
-        return () => window.removeEventListener("keydown", h)
-    }, [numPages])
+        if (id) fetchData()
+    }, [id])
+
+
 
     return (
         <div className="relative h-full w-full flex">
@@ -183,7 +254,6 @@ export default function TrainingPage() {
                     muted
                     className="w-full h-full rounded-md bg-black object-cover"
                 />
-
                 {!isVideoReady && (
                     <div className="absolute inset-0 bg-muted/80 flex items-center justify-center rounded-md z-10">
                         <div className="animate-spin h-6 w-6 border-4 border-t-transparent border-gray-400 rounded-full" />
@@ -195,30 +265,73 @@ export default function TrainingPage() {
                     <Badge variant="outline" className="bg-yellow-50 text-yellow-900 border-yellow-300">
                         {timer}
                     </Badge>
-
-                    <div className="flex items-center gap-6">
-                        <Play
-                            className={`w-5 h-5 cursor-pointer ${playUrl ? "text-primary" : "text-muted-foreground"}`}
-                            onClick={() => playUrl && window.open(playUrl, "_blank")}
-                        />
-                        <CircleDot
-                            className={`w-5 h-5 cursor-pointer ${isRec ? "text-red-600" : ""}`}
-                            onClick={toggleRec}
-                        />
+                    <div className="flex items-center gap-2">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    onClick={handleStart}
+                                    disabled={status == 'recording'}
+                                    variant="ghost"
+                                    size="default"
+                                >
+                                    <Play className="w-5 h-5 mr-1" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Start Training<br />Shortcut: <b>S</b></TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    onClick={handleEnd}
+                                    disabled={status !== 'recording'}
+                                    variant="ghost"
+                                    size="default"
+                                >
+                                    <CircleDot className="w-5 h-5 mr-1" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>End Training<br />Shortcut: <b>E</b></TooltipContent>
+                        </Tooltip>
                         <div className="h-6 w-px bg-border" />
-                        <Camera className="w-5 h-5" />
-                        <Mic className="w-5 h-5" />
-                        <NotebookText className="w-5 h-5" />
-                        <MoreVertical className="w-5 h-5" />
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    onClick={handleRestart}
+                                    disabled={status !== 'recording'}
+                                    variant="ghost"
+                                    size="icon"
+                                    className="ml-2"
+                                >
+                                    <ReplyAll className="w-5 h-5" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                Restart Training<br />
+                                Shortcut: <b>R</b>
+                            </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                >
+                                    <NotebookText className="w-5 h-5" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                Notes
+                            </TooltipContent>
+                        </Tooltip>
                     </div>
                 </div>
+
                 <div className="flex-1 flex overflow-hidden">
                     <div className="flex-1 bg-sky-100 rounded-md flex items-center justify-center">
-                        <Document file={pdfUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
+                        <Document file={fileUrl} onLoadSuccess={({ numPages }) => setNumPages(numPages)}>
                             <Page pageNumber={page} width={900} renderAnnotationLayer={false} renderTextLayer={false} />
                         </Document>
                     </div>
-
                     <aside className="hidden xl:flex flex-col gap-4 pl-4 w-56">
                         {streams.length
                             ? streams.map((s) => <RemoteVideo key={s.id} stream={s} />)
@@ -230,12 +343,12 @@ export default function TrainingPage() {
                     </aside>
                 </div>
                 <div className="flex items-center justify-center gap-6 select-none">
-                    <Button variant="ghost" size="icon" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+                    <Button variant="ghost" size="icon" disabled={page === 1} onClick={goToPrevPage} title="Previous Slide (←)">
                         <ChevronLeft className="w-5 h-5" />
                     </Button>
                     {page}
                     <span className="text-muted-foreground">/ {numPages || "…"}</span>
-                    <Button variant="ghost" size="icon" disabled={page === numPages} onClick={() => setPage((p) => p + 1)}>
+                    <Button variant="ghost" size="icon" disabled={page === numPages} onClick={goToNextPage} title="Next Slide (→)">
                         <ChevronRight className="w-5 h-5" />
                     </Button>
                 </div>
