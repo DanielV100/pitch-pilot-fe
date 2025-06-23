@@ -14,7 +14,7 @@ export function EyeTrackingHeatmap({ trainingId }: Props) {
   useEffect(() => {
     async function fetchPersistedHeatmap() {
       try {
-        const res = await fetch(`/api/v1/training/${trainingId}/get-trainings`);
+        const res = await fetch (`http://localhost:8000/api/v1/trainings/${trainingId}/get-trainings`, { credentials: "include" });
         const trainings = await res.json();
         const training = Array.isArray(trainings)
           ? trainings.find((t: any) => t.id === trainingId)
