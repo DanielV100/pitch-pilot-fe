@@ -88,6 +88,7 @@ export default function DashboardPage() {
                             name={p.name}
                             tags={p.tags}
                             trainings={p.trainings}
+                            fileUrl={p.file_url!}
                             onBoard={() => {
                                 window.location.href = `/a/hangar/${p.id}`
                             }}

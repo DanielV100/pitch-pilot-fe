@@ -3,6 +3,7 @@ export type Presentation = {
   name: string;
   tags: string[];
   trainings: Training[];
+  file_url?: string;
 };
 
 export type FindingBar = {
@@ -40,6 +41,34 @@ export type VisibilityMode = "solo" | "private";
 
 export type DifficultyLevel = "easy" | "medium" | "hard";
 
+export interface AudioScores {
+  transcript: {
+    full_text: string;
+    words: { start: number; end: number; word: string }[];
+  };
+  wpm: number;
+  avg_volume_dbfs: number;
+  duration: number;
+  volume_timeline: { t: number; rms: number; dbfs: number }[];
+  fillers: {
+    word: string;
+    count: number;
+    explanation: string;
+    start?: number;
+  }[];
+  questions: string[];
+  formulation_aids: {
+    original: string;
+    suggestion: string;
+    explanation: string;
+  }[];
+}
+
+export type SlideEvent = {
+  timestamp: number;
+  page: number;
+};
+
 export interface TrainingCreatePayload {
   presentation_id: string;
   duration_seconds: number;
@@ -58,4 +87,12 @@ export interface Training {
   eye_calibration?: Record<string, unknown> | null;
   total_score: number;
   date: string;
+  slide_events?: SlideEvent[];
+  video_url?: string;
+  training_results?: TrainingResult[];
+}
+
+export interface TrainingResult {
+  id: string;
+  audio_scores?: AudioScores;
 }
