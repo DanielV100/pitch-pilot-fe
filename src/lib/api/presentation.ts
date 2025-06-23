@@ -5,7 +5,6 @@ import { FindingEntry } from "@/types/presentation";
 export async function getPresentationsWithTrainings(): Promise<Presentation[]> {
   return await request<Presentation[]>("/v1/presentations/get-presentations", {
     credentials: "include",
-    cache: "no-store",
   });
 }
 
@@ -16,7 +15,6 @@ export async function getPresentation(
     `/v1/presentations/${presentationId}/get-presentation`,
     {
       credentials: "include",
-      cache: "no-store",
     }
   );
 }
@@ -45,7 +43,6 @@ export async function getFindingBars(presentationId: string) {
     `/v1/presentations/${presentationId}/get-finding-bars`,
     {
       credentials: "include",
-      cache: "no-store",
     }
   );
 }
@@ -57,7 +54,6 @@ export async function getActiveFinding(
     `/v1/presentations/${presentationId}/get-active-finding`,
     {
       credentials: "include",
-      cache: "no-store",
     }
   );
 }
@@ -69,7 +65,6 @@ export async function getPresentationFileUrl(
     `/v1/presentations/${presentationId}/get-file-url`,
     {
       credentials: "include",
-      cache: "no-store",
     }
   );
 }
