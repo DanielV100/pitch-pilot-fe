@@ -137,7 +137,7 @@ export default function FlightLogMain() {
                     videoRef={videoRef as React.RefObject<HTMLVideoElement>}
                 />
             </div>
-            {log?.id && <EyeTrackingHeatmap trainingId={log.id} />}
+            {log?.id && <EyeTrackingHeatmap data={log} />}
         </div>
     )
 }

@@ -42,7 +42,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { TrainingSetupDialog } from "@/components/hangar/training-setup-stepper"
 import { EyeTrackingHeatmap } from "@/components/eye-tracking-heatmap"
-import { EyeTrackingHeatmapGrid } from "@/components/eye-tracking-heatmap";
+//import { EyeTrackingHeatmapGrid } from "@/components/eye-tracking-heatmap";
 import { getTrainingsForPresentation } from "@/lib/api/trainings"
 
 export default function HangarPage() {
@@ -229,7 +229,7 @@ export default function HangarPage() {
                     {presentation.trainings.map((training) => (
                         <div key={training.id}>
                             <h3>Training {training.id}</h3>
-                            <EyeTrackingHeatmap trainingId={training.id} />
+                            
                         </div>
                     ))}
                 </div>
