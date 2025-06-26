@@ -99,6 +99,7 @@ export default function TrainingPage() {
     }, [tid])
     function updateSlideEvents(events: { timestamp: number, page: number }[]) {
         slideEventsRef.current = events;
+        console.log("Updated slide events:", events)
         setSlideEvents(events);
     }
     const goToPrevPage = React.useCallback(() => {

@@ -10,6 +10,7 @@ import { getTrainingById } from "@/lib/api/trainings"
 import { Training, TrainingResult } from "@/types/presentation"
 import { FlightLogSidebar } from "@/components/flight-log/bar-with-cards"
 import { getPresentationFileUrl } from "@/lib/api/presentation"
+import { EyeTrackingHeatmap } from "@/components/eye-tracking/heatmap"
 
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`
@@ -28,6 +29,7 @@ export default function FlightLogMain() {
         setLoading(true)
         getTrainingById(tid)
             .then((data) => {
+                console.log("Flight log data:", data)
                 setLog(data)
                 setCurrentPage(data.slide_events?.[0]?.page ?? 1)
             })
@@ -136,6 +138,7 @@ export default function FlightLogMain() {
                     videoRef={videoRef as React.RefObject<HTMLVideoElement>}
                 />
             </div>
+            {log?.id && <EyeTrackingHeatmap data={log} />}
         </div>
     )
 }
