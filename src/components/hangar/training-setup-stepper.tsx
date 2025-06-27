@@ -31,6 +31,7 @@ import { Slider } from "@/components/ui/slider"
 import { FloatingLabelInput } from "@/components/ui/input"
 import { createTraining } from "@/lib/api/trainings"
 import { VisibilityMode, DifficultyLevel } from "@/types/presentation"
+import { useRouter } from "next/navigation"
 
 
 type Props = {
@@ -61,6 +62,7 @@ export function TrainingSetupDialog({ presentationId, tId, setTid }: Props) {
     const [calib, setCalib] = React.useState<Record<string, unknown> | null>(null)
     const [loading, setLoading] = React.useState(false)
     const [error, setError] = React.useState<string | null>(null)
+    const router = useRouter()
 
 
     /* Submit to API */
@@ -270,7 +272,7 @@ export function TrainingSetupDialog({ presentationId, tId, setTid }: Props) {
                                     </Button>
                                 ) : methods.current.id === "done" ? (
                                     <DialogClose asChild>
-                                        <Button variant="default">Close</Button>
+                                        <Button onClick={() => router.push(`/a/hangar/${presentationId}/training/${tId}`)} variant="default">Train</Button>
                                     </DialogClose>
                                 ) : (
                                     <Button

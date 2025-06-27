@@ -95,4 +95,12 @@ export interface Training {
 export interface TrainingResult {
   id: string;
   audio_scores?: AudioScores;
+  eye_tracking_scores?: EyeTrackingScore[];
+  eye_tracking_total_score?: number;
+}
+
+export interface EyeTrackingScore {
+  x: number;
+  y: number;
+  count: number;
 }

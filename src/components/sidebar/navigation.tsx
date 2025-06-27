@@ -63,7 +63,7 @@ export function Navigation({ primaryNavItems }: { primaryNavItems: SidebarMenuIt
           )
         })}
         {sidebar.state === "expanded" && (
-          <Button variant="outline" onClick={() => router.push("/p/add-presentation")}>
+          <Button variant="outline" onClick={() => router.push("/mission-control")}>
             <Plus />
             New Presentation
           </Button>

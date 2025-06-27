@@ -9,14 +9,50 @@ interface Props {
     videoRef: RefObject<HTMLVideoElement>;
 }
 
+function normalize(str: string) {
+    return str
+        .toLowerCase()
+        .replace(/[.,!?]/g, "")
+        .trim();
+}
+
+function getPhraseStartTime(phrase: string, transcript: any): number | undefined {
+    if (!transcript?.words?.length || !phrase) return undefined;
+    const phraseWords = phrase.split(/\s+/).map(normalize).filter(Boolean);
+
+    for (let i = 0; i <= transcript.words.length - phraseWords.length; i++) {
+        let match = true;
+        for (let j = 0; j < phraseWords.length; j++) {
+            if (normalize(transcript.words[i + j].word) !== phraseWords[j]) {
+                match = false;
+                break;
+            }
+        }
+        if (match) return transcript.words[i].start;
+    }
+    const fallback = transcript.words.find(
+        (w: any) => normalize(w.word) === phraseWords[0]
+    );
+    return fallback?.start;
+}
+
+function formatTime(sec: number) {
+    if (isNaN(sec)) return "";
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 export function FlightLogSidebar({ result, videoRef }: Props) {
     if (!result?.audio_scores) return null;
 
     const { fillers, volume_timeline, formulation_aids, questions, transcript } = result.audio_scores;
+
     function isDuringSpeech(t: number) {
         if (!transcript?.words?.length) return false;
         return transcript.words.some((w: any) => w.start <= t && w.end >= t);
     }
+
     const volumeIssues = (volume_timeline || [])
         .filter((v: any) => v.dbfs < -70 && isDuringSpeech(v.t))
         .map((v: any) => ({
@@ -26,46 +62,6 @@ export function FlightLogSidebar({ result, videoRef }: Props) {
             label: "Low volume",
             description: "Your voice was too quiet at this moment. Speak louder or move closer to the mic."
         }));
-
-    function normalize(str: string) {
-        return str
-            .toLowerCase()
-            .replace(/[.,!?]/g, "")
-            .trim();
-    }
-
-    function getSentenceStartTime(sentence: string, transcript: any): number | undefined {
-        if (!transcript?.words?.length || !sentence) return undefined;
-        const originalWords = sentence.split(/\s+/).map(normalize).filter(Boolean);
-        for (let i = 0; i <= transcript.words.length - originalWords.length; i++) {
-            let match = true;
-            for (let j = 0; j < originalWords.length; j++) {
-                if (
-                    normalize(transcript.words[i + j].word) !== originalWords[j]
-                ) {
-                    match = false;
-                    break;
-                }
-            }
-            if (match) {
-                return transcript.words[i].start;
-            }
-        }
-        const fallback = transcript.words.find(
-            (w: any) => normalize(w.word) === originalWords[0]
-        );
-        return fallback?.start;
-    }
-    function wordTime(transcript: any, word: string) {
-        const w = transcript.words.find((w: any) => w.word.trim() === word.trim());
-        return w ? formatTime(w.start) : "";
-    }
-    function formatTime(sec: number) {
-        if (isNaN(sec)) return "";
-        const m = Math.floor(sec / 60);
-        const s = Math.floor(sec % 60);
-        return `${m}:${s.toString().padStart(2, "0")}`;
-    }
 
     return (
         <Tabs defaultValue="fillers" className="w-full">
@@ -90,18 +86,19 @@ export function FlightLogSidebar({ result, videoRef }: Props) {
                 {(fillers && fillers.length > 0) ? (
                     <div className="flex flex-col gap-3">
                         {fillers.map((f: any, i: number) => {
-                            const word = transcript.words.find((w: any) => w.word.trim() === f.word.trim());
+                            const startTime = getPhraseStartTime(f.word, transcript);
                             return (
                                 <Card
                                     key={i}
                                     className="cursor-pointer border-2 border-transparent hover:border-blue-500 transition-all"
                                     onClick={() => {
-                                        if (word && videoRef.current) videoRef.current.currentTime = word.start;
+                                        if (startTime !== undefined && videoRef.current)
+                                            videoRef.current.currentTime = startTime;
                                     }}
                                 >
                                     <CardContent className="flex flex-col gap-2 p-4">
                                         <div className="flex items-center gap-2 font-bold text-blue-700">
-                                            <span>{wordTime(transcript, f.word)}</span>
+                                            <span>{startTime !== undefined ? formatTime(startTime) : ""}</span>
                                             <MessageCircle className="w-4 h-4" />
                                             Filler word: <span className="ml-1">{f.word}</span>
                                             <span className="ml-2 text-xs font-normal text-blue-400 bg-blue-100 px-2 py-0.5 rounded-full">
@@ -146,7 +143,7 @@ export function FlightLogSidebar({ result, videoRef }: Props) {
                 {(formulation_aids && formulation_aids.length > 0) ? (
                     <div className="flex flex-col gap-3">
                         {formulation_aids.map((a: any, i: number) => {
-                            const startTime = getSentenceStartTime(a.original, transcript);
+                            const startTime = getPhraseStartTime(a.original, transcript);
                             return (
                                 <Card
                                     key={i}
