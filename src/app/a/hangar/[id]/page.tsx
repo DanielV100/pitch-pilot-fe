@@ -57,7 +57,14 @@ export default function HangarPage() {
     }, [id])
 
     if (!presentation) {
-        return <p className="text-muted-foreground text-sm">Fueling hangar systems...</p>
+        return <div className="flex flex-col items-center justify-center">
+            <img
+                src="/loading/pp_animation.gif"
+                alt="Loading…"
+                className="size-full animate-spin-slow"
+                style={{ objectFit: "contain" }}
+            />
+        </div>
     }
 
     const avgScore = (
@@ -136,7 +143,7 @@ export default function HangarPage() {
                             title="Trainings"
                             value={presentation.trainings.length.toString()}
                             trend="+2"
-                            trendType="up"
+                            trendType="presentation"
                             subtitle="Sessions completed"
                             description="All past training flights"
                         />
@@ -144,7 +151,7 @@ export default function HangarPage() {
                             title="Avg. Score"
                             value={`${avgScore}%`}
                             trend="+1.2%"
-                            trendType="up"
+                            trendType="presentation"
                             subtitle="30-day trend"
                             description="Overall performance level"
                         />
@@ -197,7 +204,7 @@ export default function HangarPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {presentation.trainings.map((training: Training, index) => (
-                        <TrainingCard key={index} onBoard={() => console.log('test')} training={training} />
+                        <TrainingCard key={index} onBoard={() => router.push(`/a/hangar/${id}/training/${training.id}/flight-log`)} training={training} />
                     ))}
                 </div>
             </section>

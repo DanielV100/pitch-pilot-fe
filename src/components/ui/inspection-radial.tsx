@@ -2,7 +2,7 @@
 
 'use client'
 
-import { LabelList, RadialBar, RadialBarChart, ResponsiveContainer } from 'recharts'
+import { LabelList, PolarAngleAxis, RadialBar, RadialBarChart, ResponsiveContainer } from 'recharts'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 
 
@@ -46,6 +46,13 @@ export function ChartRadialLabel(scores: ScoreProps) {
                             cursor={false}
                             content={<ChartTooltipContent hideLabel nameKey="name" />}
                         />
+                        <PolarAngleAxis
+                            type="number"
+                            domain={[0, 100]}
+                            angleAxisId={0}
+                            tick={false}
+                        />
+
                         <RadialBar
                             dataKey="val"
                             background

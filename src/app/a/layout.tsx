@@ -3,7 +3,7 @@ import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import { SiteHeader } from "@/components/sidebar/site-header";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { Loader2 } from "lucide-react"; // <- Spinner Icon from Lucide/Shadcn
+import { Loader2 } from "lucide-react";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     const { user } = useCurrentUser();

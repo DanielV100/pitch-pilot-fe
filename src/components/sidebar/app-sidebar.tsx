@@ -46,14 +46,6 @@ const hardCodedMenuItems: SidebarMenuItemType[] = [
     icon: LayoutDashboard,
     id: 1,
     isActive: true,
-  },
-  {
-    title: "Dashboard",
-    url: "/p/dashboard",
-    icon: LayoutDashboard,
-    id: 2,
-    isActive: false,
-    needsLabel: true,
   }
 ]
 

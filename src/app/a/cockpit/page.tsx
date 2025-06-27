@@ -6,8 +6,6 @@ import { getPresentationsWithTrainings } from "@/lib/api/presentation"
 import { Presentation } from "@/types/presentation"
 import { useCurrentUser } from "@/hooks/useCurrentUser"
 import { StatCard } from "@/components/ui/stats-card"
-import { Card, CardContent } from "@/components/ui/card"
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
 
 
 export default function DashboardPage() {
@@ -21,8 +19,6 @@ export default function DashboardPage() {
             try {
                 const data = await getPresentationsWithTrainings()
                 setPresentations(data)
-
-                // calculate average score
                 const allTrainings = data.flatMap((p) => p.trainings)
                 const totalScore = allTrainings.reduce((sum, t) => sum + t.total_score, 0)
                 const average = allTrainings.length > 0
@@ -52,34 +48,41 @@ export default function DashboardPage() {
             </div>
 
             {loading ? (
-                <p className="text-sm text-muted-foreground">Loading presentations…</p>
+                <div className="flex flex-col items-center justify-center">
+                    <img
+                        src="/loading/pp_animation.gif"
+                        alt="Loading…"
+                        className="size-full animate-spin-slow"
+                        style={{ objectFit: "contain" }}
+                    />
+                </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <StatCard
                         title="Presentations"
                         value={presentations.length.toString()}
                         trend="+1"
-                        trendType="up"
-                        subtitle="New mission logged this week"
-                        description="All current and archived flights onboard"
+                        trendType="presentation"
+                        description="New mission logged this week"
+                        subtitle="Number of presentations in the hangar"
                     />
 
                     <StatCard
                         title="Trainings"
                         value={presentations.reduce((acc, p) => acc + p.trainings.length, 0).toString()}
                         trend="-8%"
-                        trendType="down"
-                        subtitle="Flight simulations slowing down"
-                        description="Training runs across all decks"
+                        trendType="training"
+                        description="Flight simulations slowing down"
+                        subtitle="Number of training flights completed"
                     />
 
                     <StatCard
                         title="Avg. Training Score"
                         value={avgScore + "%"}
                         trend="+3.2%"
-                        trendType="up"
-                        subtitle="Trajectory improving"
-                        description="Scoring based on past 30 days"
+                        trendType="neutral"
+                        description="Trajectory improving"
+                        subtitle="Average score across all training flights"
                     />
 
                     {presentations.map((p) => (

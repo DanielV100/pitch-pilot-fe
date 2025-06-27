@@ -53,6 +53,7 @@ export default function PresentationSetupPage() {
                 file: pdfFile[0],
             })
             setResult(response)
+            console.log("Presentation created successfully:", response)
             goTo("done")
         } catch (err) {
             setError("Something went wrong while launching your project. Please try again.")
