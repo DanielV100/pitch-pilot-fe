@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { Document, Page, pdfjs } from "react-pdf"
 import {
     ChevronLeft,
@@ -54,6 +54,7 @@ function RemoteVideo({ stream }: { stream: MediaStream }) {
 export default function TrainingPage() {
     const { tid, id } = useParams<{ tid: string, id: string }>()
     // State for media, timer, recording
+    const router = useRouter()
     const [localStream, setLocalStream] = React.useState<MediaStream>()
     const previewRef = React.useRef<HTMLVideoElement>(null as unknown as HTMLVideoElement)
     const [numPages, setNumPages] = React.useState(0)
@@ -71,6 +72,8 @@ export default function TrainingPage() {
     const blendshapes = useFaceTracking(previewRef, tid, status === "recording")
     const timer = new Date(secs * 1_000).toISOString().substring(14, 19)
     const [fileUrl, setFileUrl] = React.useState<string>("")
+    const [isLoading, setIsLoading] = React.useState(false)
+
     React.useEffect(() => {
         navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((s) => {
             setLocalStream(s)
@@ -205,7 +208,10 @@ export default function TrainingPage() {
     async function finalizeRecording() {
         setIsRec(false)
         setStatus("finished")
+        setIsLoading(true)
         await finishRecording(tid, prefix.current!, slideEventsRef.current!)
+        router.push(`/a/hangar/${id}/training/${tid}/flight-log`)
+        setIsLoading(false)
         console.log("Slide events:", slideEventsRef.current)
     }
     async function handleStart() {
@@ -354,6 +360,13 @@ export default function TrainingPage() {
                     </Button>
                 </div>
             </div>
+            {isLoading && (
+                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+                    <div className="animate-spin h-10 w-10 border-4 border-t-transparent border-primary rounded-full mb-4" />
+                    <div className="text-lg font-medium text-primary">Please wait...</div>
+                </div>
+            )}
+
         </div>
     )
 }

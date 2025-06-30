@@ -31,6 +31,7 @@ export default function FlightSummaryPage() {
         setLoading(true)
         getTrainingById(tid)
             .then((data) => {
+                console.log("Fetched training log:", data)
                 setLog(data)
                 setCurrentPage(data.slide_events?.[0]?.page ?? 1)
             })
