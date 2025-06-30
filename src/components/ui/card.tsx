@@ -88,13 +88,13 @@ function TicketDivider() {
       <div className="absolute top-1/2 left-0 w-full border-t-2 border-dashed tracking-widest border-gray-300 -translate-y-1/2 z-10" />
 
 
-      <div className="absolute -left-[1px] top-1/2 -translate-y-1/2 w-16 h-16 overflow-hidden z-20">
-        <div className="w-8 h-8 rounded-full bg-white absolute -left-4 top-4 border border-grey" />
+      <div className="absolute -left-[1px] top-1/2 -translate-y-1/2 w-20 h-20 overflow-hidden z-20">
+        <div className="w-12 h-12 rounded-full bg-white absolute -left-4 top-4 border border-grey" />
       </div>
 
 
-      <div className="absolute -right-[1px] top-1/2 -translate-y-1/2 w-16 h-16 overflow-hidden z-20">
-        <div className="w-8 h-8 rounded-full bg-white absolute -right-4 top-4 border border-grey" />
+      <div className="absolute -right-[1px] top-1/2 -translate-y-1/2 w-20 h-20 overflow-hidden z-20">
+        <div className="w-12 h-12 rounded-full bg-white absolute -right-4 top-4 border border-grey" />
       </div>
     </div>
   )
