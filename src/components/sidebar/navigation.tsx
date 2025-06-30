@@ -20,6 +20,8 @@ import { useRouter } from "next/navigation"
 import { useActiveIdStore } from "@/hooks/sidebar/useActiveIdStore"
 import { SidebarMenuItemType } from "./app-sidebar"
 import Link from "next/link"
+import { Separator } from "@radix-ui/react-separator"
+import { Title } from "@radix-ui/react-dialog"
 
 export function Navigation({ primaryNavItems }: { primaryNavItems: SidebarMenuItemType[] }) {
   const router = useRouter()
@@ -62,12 +64,21 @@ export function Navigation({ primaryNavItems }: { primaryNavItems: SidebarMenuIt
             </SidebarMenuItem>
           )
         })}
+        <Separator className="my-4 bg-gray-200 h-px w-full"/>
+
         {sidebar.state === "expanded" && (
-          <Button variant="outline" onClick={() => router.push("/mission-control")}>
-            <Plus />
-            New Presentation
-          </Button>
+          <p className="text-[12px] text-gray-500">Projects</p>
         )}
+
+<Button
+          variant="outline"
+          onClick={() => router.push("/mission-control")}
+          className="flex items-center gap-2 mt-2"
+        >
+          <Plus />
+          {sidebar.state === "expanded" && <span>New Presentation</span>}
+        </Button>
+        
       </SidebarMenu>
     </SidebarGroup>
   )

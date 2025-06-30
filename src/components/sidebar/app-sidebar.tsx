@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/sidebar"
 import { NavSecondary } from "./nav-secondary"
 import { useEffect, useState } from "react"
+import { Separator } from "@/components/ui/separator"
 
 
 export interface SidebarMenuItemType {
@@ -37,14 +38,14 @@ const hardCodedMenuItems: SidebarMenuItemType[] = [
     title: "Collapse",
     url: "#",
     icon: PanelRightOpen,
-    id: 0,
-    isActive: false,
+    id:0, 
+    isActive: true,
   },
   {
     title: "Dashboard",
-    url: "/p/dashboard",
+    url: "/a/cockpit",
     icon: LayoutDashboard,
-    id: 1,
+    
     isActive: true,
   }
 ]
@@ -74,8 +75,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {...props}
     >
       <SidebarContent>
+        
         <Navigation primaryNavItems={navData} />
-        <NavSecondary items={hardCodedSubMenuItems} className="mt-auto" />
+      
       </SidebarContent>
     </Sidebar>
   )
