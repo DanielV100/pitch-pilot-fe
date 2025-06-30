@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 function Separator({
   className,
   orientation = "horizontal",
-  decorative = true,
+  decorative = false,
   ...props
 }: React.ComponentProps<typeof SeparatorPrimitive.Root>) {
   return (
@@ -25,4 +25,4 @@ function Separator({
   )
 }
 
-export { Separator }
+export { Separator } 

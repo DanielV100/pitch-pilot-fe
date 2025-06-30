@@ -1,6 +1,6 @@
 "use client"
 
-import { FilePenLine, Info, Upload, Loader2 } from "lucide-react"
+import { FilePenLine, Info, Upload, Loader2, Router } from "lucide-react"
 import * as React from "react"
 import { defineStepper } from "@/components/ui/stepper"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { InputTags } from "@/components/ui/input-tags"
 import { PresentationUpload } from "@/components/mission-control/file-upload"
 import { createPresentation } from "@/lib/api/presentation"
+import { useRouter } from "next/navigation"
 
 const { Stepper } = defineStepper(
     {
@@ -33,6 +34,7 @@ const { Stepper } = defineStepper(
     }
 )
 
+
 export default function PresentationSetupPage() {
     const [projectName, setProjectName] = React.useState("")
     const [projectDescription, setProjectDescription] = React.useState("")
@@ -41,6 +43,8 @@ export default function PresentationSetupPage() {
     const [result, setResult] = React.useState<any>(null)
     const [loading, setLoading] = React.useState(false)
     const [error, setError] = React.useState<string | null>(null)
+    const router = useRouter()
+    const projectId = result?.id
 
     const handleSubmit = async (goTo: (stepId: "name" | "background" | "upload" | "done") => void) => {
         setLoading(true)
@@ -127,7 +131,10 @@ export default function PresentationSetupPage() {
                                     </Stepper.Panel>
                                 ),
 
+                                    
+
                                 done: () => (
+                                    
                                     <Stepper.Panel className="p-4 bg-white rounded-md space-y-4">
                                         <h2 className="text-2xl font-bold">🎉 Project Successfully Launched</h2>
                                         <p className="text-muted-foreground">You’ve successfully launched your project.</p>
@@ -146,10 +153,25 @@ export default function PresentationSetupPage() {
                                                 <strong>Slides Processed:</strong> {result?.finding_entries?.[0]?.findings?.slides?.length ?? "–"}
                                             </div>
                                         </div>
-
+                                          
                                         <div className="mt-6 flex gap-4">
-                                            <Button variant="default">🔍 Deck Inspection</Button>
-                                            <Button variant="secondary">🎤 Practice your presentation</Button>
+                                                
+                                            <Button variant="default"
+                                             onClick={() => {
+                                              const projectId = result?.id
+                                               if (projectId) {
+                                                router.push(`/a/hangar/${projectId}/inspection`)
+                                                     }
+                                                     }}>🔍 Deck Inspection</Button>
+
+                                            <Button variant="default"
+                                             onClick={() => {
+                                              const projectId = result?.id
+                                               if (projectId) {
+                                                router.push(`/a/hangar/${projectId}`)
+                                                     }
+                                                     }}>🎤 Practice your presentation</Button>         
+                                            
                                         </div>
                                     </Stepper.Panel>
                                 ),
@@ -167,8 +189,11 @@ export default function PresentationSetupPage() {
                                         if (methods.current.id === "upload") {
                                             handleSubmit(methods.goTo)
                                         } else {
-                                            methods.next()
-                                        }
+                                            methods.next() }
+                                       
+                                        
+                                        
+
                                     }}
                                     disabled={
                                         loading ||
@@ -180,6 +205,7 @@ export default function PresentationSetupPage() {
                                         <Loader2 className="animate-spin h-4 w-4 mr-2" />
                                     ) : methods.isLast ? (
                                         "Finish Setup"
+            
                                     ) : (
                                         "Next"
                                     )}
