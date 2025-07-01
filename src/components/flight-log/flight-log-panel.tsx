@@ -5,6 +5,7 @@ import { AlertTriangle, Info, Zap } from "lucide-react"
 import { EyeTrackingCard } from "./eye-tracking-score"
 import { AudioLevelCard } from "./audio-level"
 import { FillerWordsCard } from "./filler-word-card"
+import { Badge } from "../ui/badge"
 
 function ProgressCircle({ percent, size = 64, strokeWidth = 8, color = "green" }) {
     const r = (size - strokeWidth) / 2
@@ -29,7 +30,7 @@ function ProgressCircle({ percent, size = 64, strokeWidth = 8, color = "green" }
     )
 }
 
-export function FlightLogPanel({ result }) {
+export function FlightLogPanel({ result, totalScore }) {
     if (!result?.audio_scores) return null
     const { eye_tracking_total_score, audio_scores } = result
     const wpm = audio_scores.wpm
@@ -59,6 +60,11 @@ export function FlightLogPanel({ result }) {
 
     return (
         <div className="flex flex-col gap-8 w-full max-w-full">
+            <div className="flex items-center justify-end -mb-4">
+                <Badge variant={"outline"} className="">
+                    Total Score: {totalScore.toFixed(2)}%
+                </Badge>
+            </div>
             {/* Eye tracking */}
             <EyeTrackingCard eyePercent={eyePercent} totalScore={92} />
             {/* Audio Level */}

@@ -67,6 +67,7 @@ export default function FlightSummaryPage() {
         return <div className="flex-1 flex items-center justify-center text-muted-foreground">Loading…</div>
     }
 
+    const totalScore = log.total_score
     const result = log.training_results?.[0]
 
     return (
@@ -141,7 +142,7 @@ export default function FlightSummaryPage() {
                         </div>
                     </div>
                     {/* Flight log (right cards/metrics) */}
-                    <FlightLogPanel result={result} />
+                    <FlightLogPanel totalScore={totalScore} result={result} />
                 </div>
             </div>
         </div>
