@@ -53,7 +53,6 @@ function RemoteVideo({ stream }: { stream: MediaStream }) {
 // ------- MAIN PAGE -------
 export default function TrainingPage() {
     const { tid, id } = useParams<{ tid: string, id: string }>()
-    // State for media, timer, recording
     const router = useRouter()
     const [localStream, setLocalStream] = React.useState<MediaStream>()
     const previewRef = React.useRef<HTMLVideoElement>(null as unknown as HTMLVideoElement)
@@ -64,7 +63,7 @@ export default function TrainingPage() {
     const timerRef = React.useRef<NodeJS.Timeout>(null)
     const [recStart, setRecStart] = React.useState<number | null>()
     const [slideEvents, setSlideEvents] = React.useState<{ timestamp: number, page: number }[]>([])
-    const slideEventsRef = React.useRef<{ timestamp: number, page: number }[]>([]);
+    const slideEventsRef = React.useRef<{ timestamp: number, page: number }[]>([])
     const [isVideoReady, setIsVideoReady] = React.useState(false)
     const [playUrl, setPlayUrl] = React.useState<string | null>(null)
     const [streams, setStreams] = React.useState<MediaStream[]>([])
@@ -73,6 +72,8 @@ export default function TrainingPage() {
     const timer = new Date(secs * 1_000).toISOString().substring(14, 19)
     const [fileUrl, setFileUrl] = React.useState<string>("")
     const [isLoading, setIsLoading] = React.useState(false)
+    const wsRef = React.useRef<WebSocket | null>(null)
+    const [wsReady, setWsReady] = React.useState(false)
 
     React.useEffect(() => {
         navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((s) => {
@@ -87,22 +88,76 @@ export default function TrainingPage() {
     }, [])
 
     React.useEffect(() => {
-        if (!tid) return
-        const ws = new WebSocket(`${process.env.NEXT_PUBLIC_API_URL}/v1/ws/signaling/join`)
-        const pc = newPeer()
-        wireSignalling(pc, ws, tid, false)
-        pc.ontrack = (ev) =>
-            setStreams((cur) =>
-                cur.find((s) => s.id === ev.streams[0].id) ? cur : [...cur, ev.streams[0]],
-            )
-        ws.onopen = () => ws.send(JSON.stringify({ type: "join", tid }))
-        return () => {
-            pc.close(); ws.close()
+        if (!tid) return;
+
+        let pc: RTCPeerConnection | null = null;
+        let ws: WebSocket | null = null;
+
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
+            setLocalStream(stream);
+            if (previewRef.current) {
+                previewRef.current.srcObject = stream;
+                previewRef.current.play().catch(() => { });
+            }
+
+            pc = newPeer();
+            stream.getTracks().forEach((t) => pc.addTrack(t, stream));
+
+            ws = new WebSocket(`${process.env.NEXT_PUBLIC_API_URL}/v1/ws/signaling/join`);
+            wsRef.current = ws;
+
+            pc.onicecandidate = (event) => {
+                if (event.candidate && ws?.readyState === 1) {
+                    ws.send(JSON.stringify({ type: "candidate", candidate: event.candidate, room: tid }));
+                }
+            };
+
+            ws.onopen = () => {
+                setWsReady(true);
+                ws?.send(JSON.stringify({ type: "join", room: tid }));
+                ws?.send(JSON.stringify({ type: "slide_change", page, fileUrl, room: tid }));
+            };
+
+            // CORRECTED: Unified message handler
+            ws.onmessage = async (e) => {
+                if (!pc || !ws) return;
+                try {
+                    const msg = JSON.parse(e.data);
+
+                    if (msg.type === "offer") {
+                        await pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+                        const answer = await pc.createAnswer();
+                        await pc.setLocalDescription(answer);
+                        ws.send(JSON.stringify({ type: "answer", sdp: pc.localDescription, room: tid }));
+                    } else if (msg.type === "candidate") {
+                        await pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+                    }
+                    else if (msg.type === "request_slide_sync") {
+                        ws.send(JSON.stringify({ type: "slide_change", page, fileUrl, room: tid }));
+                    }
+                } catch (err) {
+                    console.error("Failed to process message:", err);
+                }
+            };
+
+            pc.ontrack = (ev) => {
+                setStreams((cur) =>
+                    cur.find((s) => s.id === ev.streams[0].id) ? cur : [...cur, ev.streams[0]]
+                );
+            };
+        });
+
+        return () => { ws?.close(); pc?.close(); wsRef.current = null; setWsReady(false); };
+    }, [tid]);
+
+    React.useEffect(() => {
+        if (wsRef.current && wsRef.current.readyState === 1 && wsReady) {
+            wsRef.current.send(JSON.stringify({ type: "slide_change", page, fileUrl, room: tid }))
         }
-    }, [tid])
+    }, [page, fileUrl, tid, wsReady])
+
     function updateSlideEvents(events: { timestamp: number, page: number }[]) {
         slideEventsRef.current = events;
-        console.log("Updated slide events:", events)
         setSlideEvents(events);
     }
     const goToPrevPage = React.useCallback(() => {
@@ -163,7 +218,6 @@ export default function TrainingPage() {
     const recorder = React.useRef<MediaRecorder>(null)
 
     async function startRec() {
-        console.log('test')
         if (!localStream) return
         const { prefix: pre, urls } = await startRecording(tid)
         prefix.current = pre
@@ -239,7 +293,6 @@ export default function TrainingPage() {
     React.useEffect(() => {
         async function fetchData() {
             try {
-
                 const fileUrlObj = await getPresentationFileUrl(id as string);
                 setFileUrl(fileUrlObj.file_url);
             } catch (err) {
@@ -248,8 +301,6 @@ export default function TrainingPage() {
         }
         if (id) fetchData()
     }, [id])
-
-
 
     return (
         <div className="relative h-full w-full flex">
@@ -366,7 +417,6 @@ export default function TrainingPage() {
                     <div className="text-lg font-medium text-primary">Please wait...</div>
                 </div>
             )}
-
         </div>
     )
 }
