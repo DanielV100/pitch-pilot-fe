@@ -104,3 +104,10 @@ export interface EyeTrackingScore {
   y: number;
   count: number;
 }
+
+
+export type LatestTrainingAnalyticsOut = {
+  content_score: number | null;
+  delivery_score: number | null;
+  engagement_score: number | null;
+};

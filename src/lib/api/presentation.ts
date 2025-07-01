@@ -1,6 +1,7 @@
 import { request } from "@/lib/api/core";
 import { FindingBar, Presentation } from "@/types/presentation";
 import { FindingEntry } from "@/types/presentation";
+import { LatestTrainingAnalyticsOut } from "@/types/presentation";
 
 export async function getPresentationsWithTrainings(): Promise<Presentation[]> {
   return await request<Presentation[]>("/v1/presentations/get-presentations", {
@@ -68,3 +69,15 @@ export async function getPresentationFileUrl(
     }
   );
 }
+
+export async function getLatestTrainingAnalytics(
+  presentationId: string
+): Promise<LatestTrainingAnalyticsOut> {
+  return await request<LatestTrainingAnalyticsOut>(
+    `/v1/presentations/${presentationId}/latest-training-analytics`,
+    {
+      credentials: "include",
+    }
+  );
+}
+

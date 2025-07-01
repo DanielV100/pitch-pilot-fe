@@ -32,53 +32,64 @@ import {
 import { useEffect, useState } from "react"
 import { StatCard } from "@/components/ui/stats-card"
 import { BarChart3, FileText, Notebook, Plus, Eye } from "lucide-react"
-import { getPresentation } from "@/lib/api/presentation"
+import { getPresentation,getLatestTrainingAnalytics } from "@/lib/api/presentation"
 import { useParams, useRouter } from "next/navigation"
 import { HangarFindingsSection } from "@/components/hangar/hangar-finding-section"
 import { FancySeparator } from "@/components/ui/fancy-separator"
-import { Presentation, Training } from "@/types/presentation"
+import { Presentation, Training, LatestTrainingAnalyticsOut } from "@/types/presentation"
 import { TrainingCard } from "@/components/hangar/training-card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { TrainingSetupDialog } from "@/components/hangar/training-setup-stepper"
 
+
+
 export default function HangarPage() {
     const router = useRouter()
     const { id } = useParams()
     const [presentation, setPresentation] = useState<Presentation>()
+    const [latestAnalytics, setLatestAnalytics] = useState<LatestTrainingAnalyticsOut | null>(null)
     const [tId, setTId] = useState<string | null>("")
 
     useEffect(() => {
         const load = async () => {
-            const data = await getPresentation(id as string)
-            setPresentation(data)
+            if (!id) return;
+            try {
+                // Lade beide Daten parallel für eine bessere Performance
+                const [presData, analyticsData] = await Promise.all([
+                    getPresentation(id as string),
+                    getLatestTrainingAnalytics(id as string)
+                ]);
+                setPresentation(presData)
+                setLatestAnalytics(analyticsData)
+            } catch (error) {
+                console.error("Failed to load hangar data:", error)
+                // Optional: Fehlerbehandlung, z.B. Weiterleitung
+            }
         }
         load()
     }, [id])
 
-    if (!presentation) {
-        return <div className="flex flex-col items-center justify-center">
+    if (!presentation || !latestAnalytics) {
+        return <div className="flex flex-col items-center justify-center h-screen">
             <img
                 src="/loading/pp_animation.gif"
                 alt="Loading…"
-                className="size-full animate-spin-slow"
+                className="w-1/2 h-1/2" // Angepasste Größe für bessere Darstellung
                 style={{ objectFit: "contain" }}
             />
         </div>
     }
 
-    const avgScore = (
-        presentation.trainings.reduce((sum: number, t: any) => sum + t.total_score, 0) /
-        presentation.trainings.length
+     const avgScore = (
+        presentation.trainings.reduce((sum: number, t: any) => sum + (t.total_score || 0), 0) /
+        (presentation.trainings.length || 1) // Division durch 0 verhindern
     ).toFixed(1)
 
-    const radarData = [
-        //@ts-ignore
-        { aspect: "Content", score: presentation.analytics?.content_score ?? 0 },
-        //@ts-ignore
-        { aspect: "Delivery", score: presentation.analytics?.delivery_score ?? 0 },
-        //@ts-ignore
-        { aspect: "Eye Contact", score: presentation.analytics?.engagement_score ?? 0 },
+     const radarData = [
+        { aspect: "Content", score: latestAnalytics.content_score ?? 0 },
+        { aspect: "Delivery", score: latestAnalytics.delivery_score ?? 0 },
+        { aspect: "Eye Contact", score: latestAnalytics.engagement_score ?? 0 },
     ]
 
     const radarConfig = {
